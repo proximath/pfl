@@ -1,0 +1,10 @@
+fn fibonacci(n):
+    if n > 1:
+        n * fibonacci(n - 1)
+    else:
+        1
+
+fn main(input: ConsoleInput):
+    n = input.read(0).toInt()
+    fib = fibonacci(n)
+    println("The {n}-th Fibonacci number is {fib})
