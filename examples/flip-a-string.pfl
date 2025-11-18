@@ -1,0 +1,5 @@
+fn main(input):
+    str = input.read(0)
+    for i in [ : : -1 ]:
+        str[i] if str[i] != "a"
+    .join()

@@ -1,41 +1,33 @@
 #pragma once
 
-#include <string>
-#include <array>
-#include <fstream>
+#include "token.hpp"
+
 #include <vector>
+#include <functional>
+#include <optional>
+#include <stdexcept>
 
-enum class TokenType {
-    intLiteral,
-    floatLiteral,
-    stringLiteral,
-    rawStringLiteral,
-    identifier,
-    symbol
+enum class State {
+    placeholder, // Don't use
+    begin,
+    word,
+    space,
+    number,
+    symbol,
+    comment,
+    multiComment,
+    string,
+    end,
 };
 
-struct Token {
-    int line_num;
-    int column_num;
-    std::string text;
-    TokenType type;
+static constexpr std::array symbolList = {
+    "+", "-", "**", "*", "//", "/", "==", "=", ">=", ">", "<=", "<",
+    ",", ";", ".", ":",
+    "!", "&&", "&", "||", "&",
+    "[", "]", "(", ")", "{{", "}}" "{", "}",
+    "\'", "\"", "`"
 };
 
-std::array symbolList = {
-    '+', '-', '*', '/', '=', '%',
-    '(', ')', '[', ']', '{', '}',
-    '.', ',',
-    '\'', '\"',
-    '#',
-};
-
-bool isSymbol(char tok){
-    for(char s : symbolList){
-        if(s == tok){
-            return true;
-        }
-    }
-    return false;
-}
-
-std::vector<Token> lexer(std::ifstream);
+bool isSymbol(const std::string&);
+TokenType stateToTokenType(State);
+std::vector<Token> lexer(std::function<std::optional<std::string>()>);
