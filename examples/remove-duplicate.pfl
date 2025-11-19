@@ -1,0 +1,13 @@
+fn removeDuplicate(str: string):
+    if str.length() < 2:
+        str
+    elif str[0] == str[1]:
+        removeDuplicate(str[1:])
+    else:
+        str[0].append(removeDuplicate(str[1:]))
+
+fn main(input):
+    str = input.readLine(0)
+    sorted = str.sort()
+    removeDuplicate(sorted)
+        

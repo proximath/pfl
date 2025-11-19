@@ -19,6 +19,7 @@ enum class State {
     multiComment,
     string,
     end,
+    escape,
 };
 
 class Lexer {
@@ -32,6 +33,7 @@ private:
     State curState = State::space;
     int hashtagCount = 0;
     bool numberIsFloat = false;
+    int insideString = false;
     std::pair<bool, State> stateMachine(char);
 public:
     Lexer(std::istream *stream);

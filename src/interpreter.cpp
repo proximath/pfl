@@ -7,20 +7,24 @@
 #include <sstream>
 
 void repl(){
+    std::cout << "P[ainfully] F[unctional] L[anguage] Early Development Build" << std::endl;
+    std::cout << "Tip - Type\033[36m q\033[0m to quit" << std::endl;
     std::stringstream sstream;
     std::string line;
     Lexer lexer = Lexer(&sstream);
     while(true){
-        std::cout << ">> ";
+        std::cout << "\n\033[36m" << ">> ";
         std::getline(std::cin, line);
+        std::cout << "\033[0m";
         if(line == "q" || line == "quit"){
             break;
         }
         sstream.clear();
-        sstream << line << '\n';
+        sstream << line;
         while(!line.empty() && line.back() == '\\'){
-            std::cout << ">> ";
+            std::cout << "\033[36m" << ">> ";
             std::getline(std::cin, line);
+            std::cout << "\033[0m";
             sstream << line;
         };
         int lineNum = 0;

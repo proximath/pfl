@@ -4,7 +4,7 @@ fn fibonacci(n):
     else:
         1
 
-fn main(input: ConsoleInput):
+fn main(input):
     n = input.read(0).toInt()
     fib = fibonacci(n)
-    println("The {n}-th Fibonacci number is {fib})
+    println("The {n}-th Fibonacci number is {fib}")

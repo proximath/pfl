@@ -46,7 +46,14 @@ enum class TokenType {
     ifKeyword,
     forKeyword,
     doKeyword,
-    fnKeyword
+    fnKeyword,
+    newline,
+    tab,
+    carriageReturn,
+    escapeQuote,
+    escapeDoubleQuote,
+    escapeFormatStart,
+    escapeFormatEnd,
 };
 
 struct Token {
@@ -56,7 +63,7 @@ struct Token {
     TokenType type;
 };
 
-static std::unordered_map<std::string_view, TokenType> symbolLookup = {
+static std::unordered_map<std::string, TokenType> symbolLookup = {
     { "==", TokenType::doubleEqual },
     { "=",  TokenType::equal },
     { "+",  TokenType::plus },
@@ -68,6 +75,7 @@ static std::unordered_map<std::string_view, TokenType> symbolLookup = {
     { "<=", TokenType::lessEqual },
     { "<",  TokenType::less },
     { ">=", TokenType::moreEqual },
+    { ">",  TokenType::more },
     { ",",  TokenType::comma },
     { ".",  TokenType::dot },
     { ":",  TokenType::colon },
@@ -83,14 +91,14 @@ static std::unordered_map<std::string_view, TokenType> symbolLookup = {
     { "`",  TokenType::backTick }
 };
 
-static std::unordered_map<std::string_view, TokenType> keywordLookup = {
+static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "fn", TokenType::fnKeyword },
     { "for", TokenType::forKeyword },
     { "if", TokenType::ifKeyword },
     { "do", TokenType::doKeyword },
 };
 
-static std::unordered_map<TokenType, std::string_view> tokenTypeNameLookup = {
+static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::placeholder, "placeholder" },
     { TokenType::identifier, "identifier" },
     { TokenType::keyword, "keyword" },
@@ -130,10 +138,30 @@ static std::unordered_map<TokenType, std::string_view> tokenTypeNameLookup = {
     { TokenType::quote, "quote" },
     { TokenType::doubleQuote, "doubleQuote" },
     { TokenType::backTick, "backTick" },
-
+    { TokenType::ifKeyword, "ifKeyword" },
+    { TokenType::forKeyword, "forKeyword" },
+    { TokenType::doKeyword, "doKeyword" },
+    { TokenType::fnKeyword, "fnKeyword" },
+    { TokenType::newline, "newline" },
+    { TokenType::tab, "tab" },
+    { TokenType::carriageReturn, "carriageReturn" },
+    { TokenType::escapeQuote, "escapeQuote" },
+    { TokenType::escapeDoubleQuote, "escapeDoubleQuote" },
+    { TokenType::escapeFormatStart, "escapeFormatStart" },
+    { TokenType::escapeFormatEnd, "escapeFormatEnd" },
 };
 
-static std::string_view tokenTypeName(TokenType tt){
+static std::unordered_map<std::string, TokenType> escapeCharsLookup = {
+    { "\\n", TokenType::newline },
+    { "\\t", TokenType::tab },
+    { "\\r", TokenType::carriageReturn },
+    { "\\\'", TokenType::escapeQuote },
+    { "\\\"", TokenType::escapeDoubleQuote },
+    { "\\{", TokenType::escapeFormatStart },
+    { "\\}", TokenType::escapeFormatEnd },
+};
+
+static const std::string& tokenTypeName(TokenType tt){
     return tokenTypeNameLookup[tt];
 }
 
@@ -141,7 +169,7 @@ static bool isSymbol(const std::string &prefix){
     return symbolLookup.count(prefix);
 }
 
-static TokenType symbolToTokenType(std::string_view sym){
+static TokenType symbolToTokenType(const std::string &sym){
     return symbolLookup[sym];
 }
 
@@ -149,6 +177,14 @@ static bool isKeyword(const std::string &word){
     return keywordLookup.count(word);
 }
 
-static TokenType keywordToTokenType(std::string_view word){
+static TokenType keywordToTokenType(const std::string &word){
     return keywordLookup[word];
+}
+
+static TokenType escapeToTokenType(const std::string &esc){
+    return escapeCharsLookup[esc];
+}
+
+static bool isEscape(const std::string &esc){
+    return escapeCharsLookup.count(esc);
 }
