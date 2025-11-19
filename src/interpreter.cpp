@@ -4,34 +4,31 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 void repl(){
-    std::vector<std::string> src;
+    std::stringstream sstream;
     std::string line;
+    Lexer lexer = Lexer(&sstream);
     while(true){
         std::cout << ">> ";
         std::getline(std::cin, line);
         if(line == "q" || line == "quit"){
             break;
         }
-        src.clear();
+        sstream.clear();
+        sstream << line << '\n';
         while(!line.empty() && line.back() == '\\'){
-            src.push_back(line);
             std::cout << ">> ";
             std::getline(std::cin, line);
+            sstream << line;
         };
-        src.push_back(line);
         int lineNum = 0;
         try {
-            std::vector<Token> lexemes = lexer([&src, &lineNum](){
-                if(lineNum == src.size()){
-                    return std::optional<std::string>();
-                }
-                return std::optional<std::string>(src[lineNum++]);
-            });
+            std::vector<Token> tokens = lexer.getRemainingTokens();
             std::cout << "[ ";
-            for(const Token &lexeme : lexemes){
-                std::cout << lexeme.text << ", ";
+            for(const Token &token : tokens){
+                std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
             }
             std::cout << "]" << std::endl;
         } catch(LexerError err){
@@ -43,19 +40,13 @@ void repl(){
 }
 
 void interpreter(const std::string &path){
-    std::ifstream src(path);
-    std::string line;
+    std::ifstream is(path);
+    Lexer lexer = Lexer(&is);
     try {
-        std::vector<Token> lexemes = lexer([&src, &line](){
-            if(src.eof()){
-                return std::optional<std::string>();
-            }
-            std::getline(src, line);
-            return std::optional<std::string>(line);
-        });
+        std::vector<Token> tokens = lexer.getRemainingTokens();
         std::cout << "[ ";
-        for(const Token &lexeme : lexemes){
-            std::cout << lexeme.text << ", ";
+        for(const Token &token : tokens){
+            std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
         }
         std::cout << "]" << std::endl;
 

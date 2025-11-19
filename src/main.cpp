@@ -8,6 +8,7 @@
 int main(int argc, char *argv[]){
     bool hasSrcFile = false;
     bool quoteFilePath = false;
+    bool forceRepl = false;
     std::string filePath = "";
     for(int i = 1; i < argc; i++){
         if(quoteFilePath){
@@ -16,6 +17,11 @@ int main(int argc, char *argv[]){
                 argv[i][std::strlen(argv[i]) - 1] = '\0';
             } 
             filePath += argv[i];
+        } else if(argv[i][0] == '-'){
+            std::string arg = argv[i] + 1;
+            if(arg == "r" || arg == "repl"){
+                forceRepl = true;
+            }
         } else if(!hasSrcFile){
             hasSrcFile = true;
             if(argv[i][0] == '\"'){
@@ -25,7 +31,7 @@ int main(int argc, char *argv[]){
             filePath += argv[i];
         }
     }
-    if(!hasSrcFile){
+    if(!hasSrcFile || forceRepl){
         repl();
     } else {
         interpreter(filePath);
