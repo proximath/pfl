@@ -169,6 +169,10 @@ static bool isSymbol(const std::string &prefix){
     return symbolLookup.count(prefix);
 }
 
+static bool isSymbol(char c){
+    return symbolLookup.count(std::string(1, c));
+}
+
 static TokenType symbolToTokenType(const std::string &sym){
     return symbolLookup[sym];
 }

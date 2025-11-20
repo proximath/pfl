@@ -36,7 +36,9 @@ void repl(){
             }
             std::cout << "]" << std::endl;
         } catch(LexerError err){
-            std::cout << err.what() << std::endl;
+            std::cerr << err.what() << std::endl;
+        } catch(SystemError err){
+            std::cerr << err.what() << std::endl;
         }
 
     }

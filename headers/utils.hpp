@@ -20,8 +20,8 @@ public:
 
 class SystemError : public std::runtime_error {
 public:
-    SystemError(const std::string &msg, int lineNum, int colNum)
-      : std::runtime_error("SYSTEM ERROR (" + std::to_string(lineNum) + ", " + std::to_string(colNum) + "): " + msg)
+    SystemError(const std::string &msg, const char *fileName, int lineNum)
+      : std::runtime_error("SYSTEM ERROR (" + std::to_string(lineNum) + ", " + fileName + "): " + msg)
     {
     }
     SystemError(const std::string &msg)
@@ -29,7 +29,6 @@ public:
     {
     }
 };
-
 
 
 

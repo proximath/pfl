@@ -6,200 +6,249 @@ Lexer::Lexer(std::istream *stream)
 {
 }
 
-void Lexer::resetState(){
-    prefix = "";
-    curState = State::space;
-    hashtagCount = 0;
-    numberIsFloat = false;
-    insideString = false;
+ReadLineStatus Lexer::readLineIfEndOfLine(){
+    if(colNum >= line.length()){
+        lineNum++;
+        if(stream->eof()){
+            return ReadLineStatus::endReached;
+        }
+        colNum = 0;
+        std::getline(*stream, line);
+        line += '\n';
+        return ReadLineStatus::readNewLine;
+    }
+    return ReadLineStatus::noNewLine;
 }
 
-void pretest(){
-
+char Lexer::consumeChar(){
+    if(colNum >= line.length()){
+        throw SystemError("out of bounds in Lexer::consumeChar", __FILE_NAME__, __LINE__);
+    }
+    prefix += line[colNum];
+    colNum++;
+    return line[colNum];
 }
 
-void posttest(){
-
+char Lexer::ignoreChar(){
+    if(colNum >= line.length()){
+        throw SystemError("out of bounds in Lexer::ignoreChar", __FILE_NAME__, __LINE__);
+    }
+    colNum++;
+    return line[colNum];
 }
 
-std::pair<bool, State> Lexer::stateMachine(char c){
-    std::cerr << stateName(curState) << ": " << c << std::endl;
+char Lexer::readChar(){
+    if(colNum >= line.length()){
+        throw SystemError("out of bounds in Lexer::readChar", __FILE_NAME__, __LINE__);
+    }
+    return line[colNum];
+}
+
+TokenType Lexer::getTokenType(){
     switch(curState){
+    case State::normal:
+        emitError("State::normal has no token type");
     case State::word:
-        if(isalpha(c) || isdigit(c)){
-            return { false, State::word };
-        }
-        break;
-    case State::number:
-        if(isdigit(c)){
-            return { false, State::number };
-        } else if(c == '.'){
-            if(numberIsFloat){
-                resetState();
-                throw LexerError("Ill formed number", lineNum, tokenColStart);
-            }
-            numberIsFloat = true;
-            return { false, State::number };
-        } else if(isalpha(c)){
-            resetState();
-            throw LexerError("Identifier may not start with a number", lineNum, tokenColStart);
-        } else {
-            numberIsFloat = false;
-        }
-        break;
-    case State::symbol:
-        if(isSymbol(prefix + c)){
-            return { false, State::symbol };
-        } else if(prefix == "." && isdigit(c)){
-            numberIsFloat = true;
-            return { false, State::number };
-        } else if(prefix == "-" && isdigit(c)){
-            return { false, State::number };
-        }
-        break;
-    case State::string:
-        if(c == '\"'){
-            return { true, State::space };
-        } else {
-            return { false, State::string };
-        }
-        break;
-    case State::comment:
-        if(c == '#'){
-            hashtagCount++;
-        }
-        if(hashtagCount == 3){
-            hashtagCount = 0;
-            return { false, State::multiComment };
-        } else {
-            return { false, State::comment };
-        }
-        break;
-    case State::multiComment:
-        if(c == '#'){
-            hashtagCount++;
-        } else {
-            hashtagCount = 0;
-        }
-        if(hashtagCount == 3){
-            hashtagCount = 0;
-            return { false, State::space };
-        }
-    case State::escape:
-        if(prefix == "\\" || isEscape(prefix + c)){
-            return { false, State::escape };
-        }
-    }
-    if(isspace(c) && curState != State::comment && curState != State::multiComment && curState != State::string){
-        return { true, State::space };
-    }
-    if(c == '#' && curState != State::comment && curState != State::multiComment){
-        hashtagCount = 1;
-        return { true, State::comment };
-    }
-    if(isalpha(c)){
-        return { true, State::word };
-    }
-    if(isdigit(c)){
-        return { true, State::number };
-    }
-    if(isspace(c)){
-        return { true, State::space };
-    }
-    if(c == '\"'){
-        insideString = true;
-        return { true, State::string };
-    }   
-    if(c == '\\'){
-        return { true, State::escape };
-    }
-    if(c == '\n'){
-        return { true, State::space };
-    }
-    if(isSymbol(std::string(1, c))){
-        return { true, State::symbol };
-    }
- 
-    throw SystemError("Unreachable point in function Lexer::stateMachine", __LINE__, 5);    
-}
-
-std::optional<Token> Lexer::getNextToken(){
-    while(true){
-        if(colNum == line.length()){
-            if(stream->eof()){
-                return {};
-            }
-            std::getline(*stream, line);
-            line += '\n';
-            lineNum++;
-            colNum = 0;
-        }
-        for(; colNum < line.length(); colNum++){
-            auto[push, newState] = stateMachine(line[colNum]);
-            if(push && curState != State::space && curState != State::comment){
-                Token ret = Token{
-                    lineNum,
-                    tokenColStart,
-                    prefix,
-                    stateToTokenType(curState, prefix)
-                };
-                curState = newState;
-                if(newState == State::space){
-                    prefix = "";
-                } else {
-                    prefix = line[colNum];
-                }
-                colNum++;
-                return ret;
-            }
-            curState = newState;
-            if(curState != State::space && curState != State::comment){
-                prefix += line[colNum];
-            }
-        }
-        
-    }
-}
-
-std::vector<Token> Lexer::getRemainingTokens(){
-    std::vector<Token> res;
-    for(std::optional<Token> tok = getNextToken(); tok.has_value();){
-        res.push_back(tok.value());
-        tok = getNextToken();
-    }
-    return res;
-}
-
-TokenType stateToTokenType(State state, const std::string &text){
-    switch(state){
-    case State::word:
-        if(isKeyword(text)){
+        if(isKeyword(prefix)){
             return TokenType::keyword;
         } else {
             return TokenType::identifier;
         }
     case State::number:
-        if(text.find(".") != -1){
-            if(!isdigit(text.back())){
-                throw LexerError("Ill formed float literal");
+        if(prefix.find(".") != -1){
+            if(!isdigit(prefix.back())){
+                throw LexerError("Ill formed float literal", __LINE__, prefixColStart);
             }
             return TokenType::floatLiteral;
         } else {
             return TokenType::intLiteral;
         }
     case State::symbol:
-        return symbolToTokenType(text);
+        return symbolToTokenType(prefix);
     case State::string:
-        if(text.back() != '\"'){
-            std::cerr << text << std::endl;
-            throw LexerError("Ill formed string litteral (missing end quote)");
+        if(prefix.back() != '\"'){
+            throw LexerError("Ill formed string litteral (missing end quote)", __LINE__, prefixColStart);
         }
         return TokenType::string;
     case State::escape:
-        return escapeToTokenType(text);
+        return escapeToTokenType(prefix);
     }
+    throw SystemError("Function stateToTokenType is not implemented", __FILE_NAME__, __LINE__);
+}
 
-    throw SystemError("Function stateToTokenType is not implemented", __LINE__, 5);
+Token Lexer::createNewToken(){
+    Token returned = Token{ lineNum, colNum, prefix, getTokenType() }; 
+    prefix = "";
+    prefixColStart = colNum;
+    return returned;
+}
+
+void Lexer::resetVariables(){
+    numberIsFloat = false;
+    hashtagCount = 0;
+    hashtagUninterrupted = false;
+}
+
+void Lexer::emitError(const std::string &msg){
+    curState = State::normal;
+    line.clear();
+    prefix.clear();
+    lineNum++;
+    colNum = 0;
+    resetVariables();
+    throw LexerError(msg, lineNum, prefixColStart);
+}
+
+void Lexer::emitError(const std::string &msg, int col){
+    curState = State::normal;
+    line.clear();
+    prefix.clear();
+    lineNum++;
+    colNum = 0;
+    resetVariables();
+    throw LexerError(msg, lineNum, col);
+}
+
+std::optional<Token> Lexer::getNextToken(){
+    Token returned;
+    while(true){
+        //std::cerr << colNum << " " << line << std::endl;
+        ReadLineStatus readStatus = readLineIfEndOfLine();
+        if(readStatus == ReadLineStatus::readNewLine){
+            //std::cerr << "READED: " << line << std::endl;
+        }
+        if(readStatus == ReadLineStatus::endReached){
+            return std::optional<Token>();
+        }
+        char c = line[colNum];
+        switch(curState){
+        case State::normal:
+            if(isalpha(c)){
+                curState = State::word;
+            } else if(isdigit(c)){
+                curState = State::number;
+            } else if(c == '\"'){
+                curState = State::string;
+            } else if(c == '#'){
+                hashtagCount = 1;
+                hashtagUninterrupted = true;
+                curState = State::comment;
+            } else if(isSymbol(c)){
+                curState = State::symbol;
+            } else if(c == '\n'){
+                curState = State::newline;
+            } else if(isspace(c)){
+                curState = State::space;
+            } else if(c == '\\'){
+                curState = State::escape;
+            } else {
+                throw SystemError("State::normal not implemented", __FILE_NAME__, __LINE__);
+            }
+            break;
+        case State::word:
+            while(isalpha(c) || isdigit(c)){
+                c = consumeChar();
+            }
+            returned = createNewToken();
+            curState = State::normal;
+            return returned;
+        case State::number:
+            if(isdigit(c)){
+                consumeChar();
+            } else if(c == '.'){
+                if(numberIsFloat){
+                    emitError("Ill formed float literal (multiple decimal separator)", colNum);
+                }
+                consumeChar();
+                numberIsFloat = true;
+            } else if(isalpha(c)){
+                emitError("Identifier may not start with a number");
+            } else {
+                returned = createNewToken();
+                curState = State::normal;
+                return returned;
+            }
+            break;
+        case State::symbol:
+            c = readChar();
+            while(isSymbol(prefix + c)){
+                c = consumeChar();
+            }
+            returned = createNewToken();
+            curState = State::normal;
+            return returned;
+            break;
+        case State::string:
+            c = consumeChar();
+            while(c != '\"'){
+                if(c == '\n'){
+                    emitError("Missing string delimeter", colNum);
+                }
+                if(c == '\\'){
+                    throw SystemError("State::token inimplemented feature", __FILE_NAME__, __LINE__);
+                    createNewToken();
+                }
+                c = consumeChar();
+            }
+            consumeChar();
+            returned = createNewToken();
+            curState = State::normal;
+            return returned;
+            break;
+        case State::space:
+            while(isspace(c)){
+                c = ignoreChar();
+            }
+            curState = State::normal;
+            break;
+        case State::comment:
+            while(true){
+                c = ignoreChar();
+                if(c == '#'){
+                    hashtagCount++;
+                } else {
+                    hashtagUninterrupted = false;
+                    hashtagCount = 0;
+                    if(c == '\n'){
+                        curState = State::newline;
+                        continue;
+                    }
+                }
+                if(hashtagCount == 3){
+                    hashtagCount = 0;
+                    hashtagUninterrupted = true;
+                    curState = State::multiComment;
+                }
+            }
+            curState = State::newline;
+            break;
+        case State::newline:
+            ignoreChar();
+            curState = State::normal;
+            break;
+        case State::escape:
+            c = ignoreChar();
+            std::cerr << int(c) << std::endl;
+            if(c == '\n'){
+                curState = State::newline;
+            } else {
+                throw SystemError("State::escape unimplemented feature", __FILE__, __LINE__);
+            }
+            break;
+        default:
+            std::cerr << stateName(curState) << std::endl;
+            throw SystemError("Unknown state in Lexer::getNextToken", __FILE__, __LINE__);
+        } 
+    }
+}
+
+std::vector<Token> Lexer::getRemainingTokens(){
+    std::vector<Token> returned;
+    for(std::optional<Token> tok = getNextToken(); tok.has_value();){
+        returned.push_back(tok.value());
+        tok = getNextToken();
+    }
+    return returned;
 }
 
 std::string_view stateName(State state){
@@ -219,6 +268,6 @@ std::string_view stateName(State state){
     case State::string:
         return "string";
     default:
-        throw SystemError("function `stateName` is unimplemented!", __LINE__, 5);
+        throw SystemError("function `stateName` is unimplemented!", __FILE_NAME__, __LINE__);
     }
 }
