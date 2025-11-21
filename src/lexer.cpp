@@ -115,7 +115,7 @@ std::optional<Token> Lexer::getNextToken(){
     while(true){
         if(cnt == 10) throw;
         cnt++;
-        std::cerr << colNum << " " << stateName(curState) << std::endl;
+        //std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
         if(readStatus == ReadLineStatus::readNewLine){
             //std::cerr << "READED: " << line << std::endl;
@@ -126,7 +126,7 @@ std::optional<Token> Lexer::getNextToken(){
         char c = line[colNum];
         switch(curState){
         case State::normal:
-            if(isalpha(c)){
+            if(isalpha(c) || c == '_'){
                 curState = State::word;
             } else if(isdigit(c)){
                 curState = State::number;
