@@ -115,7 +115,7 @@ std::optional<Token> Lexer::getNextToken(){
     while(true){
         if(cnt == 10) throw;
         cnt++;
-        std::cerr << colNum << " " << stateName(curState) << std::endl;
+        //std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
         if(readStatus == ReadLineStatus::readNewLine){
             //std::cerr << "READED: " << line << std::endl;
