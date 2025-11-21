@@ -126,7 +126,7 @@ std::optional<Token> Lexer::getNextToken(){
         char c = line[colNum];
         switch(curState){
         case State::normal:
-            if(isalpha(c)){
+            if(isalpha(c) || c == '_'){
                 curState = State::word;
             } else if(isdigit(c)){
                 curState = State::number;
