@@ -47,6 +47,9 @@ enum class TokenType {
     forKeyword,
     doKeyword,
     fnKeyword,
+    trueKeyword,
+    falseKeyword,
+    typeKeyword,
     newline,
     tab,
     carriageReturn,
@@ -96,6 +99,9 @@ static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "for", TokenType::forKeyword },
     { "if", TokenType::ifKeyword },
     { "do", TokenType::doKeyword },
+    { "true", TokenType::trueKeyword },
+    { "false", TokenType::falseKeyword },
+    { "type", TokenType::typeKeyword },
 };
 
 static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {

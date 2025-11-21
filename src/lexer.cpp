@@ -50,7 +50,7 @@ TokenType Lexer::getTokenType(){
         emitError("State::normal has no token type");
     case State::word:
         if(isKeyword(prefix)){
-            return TokenType::keyword;
+            return keywordToTokenType(prefix);
         } else {
             return TokenType::identifier;
         }
@@ -73,7 +73,7 @@ TokenType Lexer::getTokenType(){
     case State::escape:
         return escapeToTokenType(prefix);
     }
-    throw SystemError("Function stateToTokenType is not implemented", __FILE_NAME__, __LINE__);
+    throw SystemError("Lexer::getTokenType, not implemented state", __FILE_NAME__, __LINE__);
 }
 
 Token Lexer::createNewToken(){
@@ -111,8 +111,11 @@ void Lexer::emitError(const std::string &msg, int col){
 
 std::optional<Token> Lexer::getNextToken(){
     Token returned;
+    int cnt = 0;
     while(true){
-        //std::cerr << colNum << " " << line << std::endl;
+        if(cnt == 10) throw;
+        cnt++;
+        std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
         if(readStatus == ReadLineStatus::readNewLine){
             //std::cerr << "READED: " << line << std::endl;
@@ -146,7 +149,7 @@ std::optional<Token> Lexer::getNextToken(){
             }
             break;
         case State::word:
-            while(isalpha(c) || isdigit(c)){
+            while(isalnum(c) || c == '_'){
                 c = consumeChar();
             }
             returned = createNewToken();
@@ -204,23 +207,54 @@ std::optional<Token> Lexer::getNextToken(){
         case State::comment:
             while(true){
                 c = ignoreChar();
+                //std::cerr << colNum << " " << hashtagCount << " " << hashtagUninterrupted  << std::endl;
                 if(c == '#'){
                     hashtagCount++;
+                } else if(c == '\n'){
+                    hashtagCount = 0;
+                    hashtagUninterrupted = false;
+                    curState = State::newline;
+                    break;
                 } else {
                     hashtagUninterrupted = false;
                     hashtagCount = 0;
-                    if(c == '\n'){
-                        curState = State::newline;
-                        continue;
-                    }
-                }
-                if(hashtagCount == 3){
+                } 
+                if(hashtagCount == 3 && hashtagUninterrupted){
                     hashtagCount = 0;
-                    hashtagUninterrupted = true;
+                    hashtagUninterrupted = false;
                     curState = State::multiComment;
+                    break;
                 }
             }
-            curState = State::newline;
+            break;
+        case State::multiComment:
+            while(true){
+                c = ignoreChar();
+                if(c == '#'){
+                    hashtagUninterrupted = true;
+                    hashtagCount++;
+                } else if(c == '\n'){
+                    ignoreChar();
+                    hashtagCount = 0;
+                    hashtagUninterrupted = false;
+                    ReadLineStatus readStatus = readLineIfEndOfLine();
+                    if(readStatus == ReadLineStatus::endReached){
+                        throw LexerError("Multi-line comment not terminated");
+                    }
+                    break;
+                } else {
+                    hashtagUninterrupted = false;
+                    hashtagCount = 0;
+                }
+                if(hashtagCount == 3 && hashtagUninterrupted){
+                    ignoreChar();
+                    hashtagCount = 0;
+                    hashtagUninterrupted = false;
+                    curState = State::normal;
+                    break;
+                }
+
+            }
             break;
         case State::newline:
             ignoreChar();
@@ -253,6 +287,8 @@ std::vector<Token> Lexer::getRemainingTokens(){
 
 std::string_view stateName(State state){
     switch(state){
+    case State::normal:
+        return "normal";
     case State::word:
         return "word";
     case State::number:
@@ -261,12 +297,16 @@ std::string_view stateName(State state){
         return "space";
     case State::comment:
         return "comment";
+    case State::multiComment:
+        return "multiComment";
     case State::symbol:
         return "symbol";
     case State::escape:
         return "escape";
     case State::string:
         return "string";
+    case State::newline:
+        return "newline";
     default:
         throw SystemError("function `stateName` is unimplemented!", __FILE_NAME__, __LINE__);
     }

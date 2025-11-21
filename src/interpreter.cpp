@@ -6,6 +6,36 @@
 #include <fstream>
 #include <sstream>
 
+enum class ReplReadLineStatus {
+    success,
+    quit,
+};
+
+ReplReadLineStatus replReadLine(std::stringstream &stream, std::string &line){
+    stream.clear();
+    std::cout << "\n\033[36m" << ">> ";
+    std::getline(std::cin, line);
+    std::cout << "\033[0m";
+    if(line == "q" || line == "quit"){
+        return ReplReadLineStatus::quit;
+    }
+    while(line.empty()){
+        std::cout << "\033[36m" << ">> ";
+        std::getline(std::cin, line);
+        std::cout << "\033[0m";
+    }
+    while(line.back() == '\\'){
+        line.pop_back();
+        stream << line << '\n';
+        std::cout << "\033[36m" << ">> ";
+        std::getline(std::cin, line);
+        std::cout << "\033[0m";
+
+    }
+    stream << line;
+    return ReplReadLineStatus::success;
+}
+
 void repl(){
     std::cout << "P[ainfully] F[unctional] L[anguage] Early Development Build" << std::endl;
     std::cout << "Tip - Type\033[36m q\033[0m to quit" << std::endl;
@@ -13,21 +43,10 @@ void repl(){
     std::string line;
     Lexer lexer = Lexer(&sstream);
     while(true){
-        std::cout << "\n\033[36m" << ">> ";
-        std::getline(std::cin, line);
-        std::cout << "\033[0m";
-        if(line == "q" || line == "quit"){
+        int lineNum = 0;
+        if(replReadLine(sstream, line) == ReplReadLineStatus::quit){
             break;
         }
-        sstream.clear();
-        sstream << line;
-        while(!line.empty() && line.back() == '\\'){
-            std::cout << "\033[36m" << ">> ";
-            std::getline(std::cin, line);
-            std::cout << "\033[0m";
-            sstream << line;
-        };
-        int lineNum = 0;
         try {
             std::vector<Token> tokens = lexer.getRemainingTokens();
             std::cout << "[ ";
@@ -40,9 +59,7 @@ void repl(){
         } catch(SystemError err){
             std::cerr << err.what() << std::endl;
         }
-
     }
-
 }
 
 void interpreter(const std::string &path){
