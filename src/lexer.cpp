@@ -111,10 +111,7 @@ void Lexer::emitError(const std::string &msg, int col){
 
 std::optional<Token> Lexer::getNextToken(){
     Token returned;
-    int cnt = 0;
     while(true){
-        if(cnt == 10) throw;
-        cnt++;
         //std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
         if(readStatus == ReadLineStatus::readNewLine){
@@ -204,6 +201,8 @@ std::optional<Token> Lexer::getNextToken(){
             }
             curState = State::normal;
             break;
+        case State::leadingSpace:
+            
         case State::comment:
             while(true){
                 c = ignoreChar();

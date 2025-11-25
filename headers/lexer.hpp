@@ -18,6 +18,7 @@ enum class State {
     comment,
     multiComment,
     string,
+    leadingSpace,
     newline,
     escape,
 };
@@ -51,6 +52,7 @@ private:
     void emitError(const std::string &);
     void emitError(const std::string &, int);
     void resetVariables();
+
 public:
     Lexer(std::istream *stream);
     std::optional<Token> getNextToken();

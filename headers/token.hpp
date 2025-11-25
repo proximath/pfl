@@ -20,6 +20,7 @@ enum class TokenType {
     exponent,
     root,
     equal,
+    notEqual,
     doubleEqual,
     less,
     lessEqual,
@@ -44,6 +45,8 @@ enum class TokenType {
     doubleQuote,
     backTick,
     ifKeyword,
+    elseKeyword,
+    elifKeyword,
     forKeyword,
     doKeyword,
     fnKeyword,
@@ -69,6 +72,8 @@ struct Token {
 static std::unordered_map<std::string, TokenType> symbolLookup = {
     { "==", TokenType::doubleEqual },
     { "=",  TokenType::equal },
+    { "!=", TokenType::notEqual },
+    { "!",  TokenType::exclamation },
     { "+",  TokenType::plus },
     { "-",  TokenType::minus },
     { "**", TokenType::exponent },
@@ -98,6 +103,8 @@ static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "fn", TokenType::fnKeyword },
     { "for", TokenType::forKeyword },
     { "if", TokenType::ifKeyword },
+    { "else", TokenType::elseKeyword },
+    { "elif", TokenType::elifKeyword },
     { "do", TokenType::doKeyword },
     { "true", TokenType::trueKeyword },
     { "false", TokenType::falseKeyword },
@@ -121,6 +128,7 @@ static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::exponent, "exponent" },
     { TokenType::root, "root" },
     { TokenType::equal, "equal" },
+    { TokenType::notEqual, "notEqual" },
     { TokenType::doubleEqual, "doubleEqual" },
     { TokenType::less, "less" },
     { TokenType::lessEqual, "lessEqual" },
@@ -197,4 +205,54 @@ static TokenType escapeToTokenType(const std::string &esc){
 
 static bool isEscape(const std::string &esc){
     return escapeCharsLookup.count(esc);
+}
+
+static bool isPrimary(const TokenType type){
+    return 
+    type == TokenType::intLiteral || 
+    type == TokenType::floatLiteral || 
+    type == TokenType::identifier;
+}
+
+static bool isPrimary(const Token &token){
+    return isPrimary(token.type);
+}
+
+static bool isOperator(const TokenType type){
+    return
+    type == TokenType::plus ||
+    type == TokenType::minus ||
+    type == TokenType::asterisk ||
+    type == TokenType::slash ||
+    type == TokenType::exponent ||
+    type == TokenType::root;
+}
+
+static bool isOperator(const Token &token){
+    return isOperator(token.type);
+
+}
+
+static bool isOpeningBrace(const TokenType type){
+    return
+    type == TokenType::parenStart ||
+    type == TokenType::curlyStart ||
+    type == TokenType::squareStart;
+}
+
+static bool isOpeningBrace(const Token &token){
+    return isOpeningBrace(token.type);
+}
+
+static TokenType getMatchingBrace(const TokenType braceType){
+    switch(braceType){
+    case TokenType::parenStart:
+        return TokenType::parenEnd;
+    case TokenType::curlyStart:
+        return TokenType::curlyEnd;
+    case TokenType::squareStart:
+        return TokenType::squareEnd;
+    default:
+        throw SystemError("At getMatchingBrace not a brace", __FILE_NAME__, __LINE__);
+    }
 }

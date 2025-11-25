@@ -1,6 +1,7 @@
 #include "../headers/utils.hpp"
 #include "../headers/interpreter.hpp"
 #include "../headers/lexer.hpp"
+#include "../headers/parser.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +43,7 @@ void repl(){
     std::stringstream sstream;
     std::string line;
     Lexer lexer = Lexer(&sstream);
+    Parser parser;
     while(true){
         int lineNum = 0;
         if(replReadLine(sstream, line) == ReplReadLineStatus::quit){
@@ -54,16 +56,27 @@ void repl(){
                 std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
             }
             std::cout << "]" << std::endl;
+            AbstractSyntaxTree ast = parser.parse(tokens);
+            ast.print(ast.root, 0);
         } catch(LexerError err){
             std::cerr << err.what() << std::endl;
+            return;
+        } catch(ParserError err){
+            std::cerr << err.what() << std::endl;
+            return;
         } catch(SystemError err){
             std::cerr << err.what() << std::endl;
+            return;
         }
     }
 }
 
 void interpreter(const std::string &path){
     std::ifstream is(path);
+    if(!is.is_open()){
+        std::cerr << "Could not open file `" << path << "`" << std::endl;
+        return;
+    }
     Lexer lexer = Lexer(&is);
     try {
         std::vector<Token> tokens = lexer.getRemainingTokens();

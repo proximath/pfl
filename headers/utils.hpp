@@ -18,6 +18,18 @@ public:
     }
 };
 
+class ParserError : public std::runtime_error {
+public:
+    ParserError(const std::string &msg, int lineNum, int colNum)
+      : std::runtime_error("PARSER ERROR (" + std::to_string(lineNum) + ", " + std::to_string(colNum) + "): " + msg)
+    {
+    }
+    ParserError(const std::string &msg)
+      : std::runtime_error("PARSER ERROR: " + msg)
+    {
+    }
+};
+
 class SystemError : public std::runtime_error {
 public:
     SystemError(const std::string &msg, const char *fileName, int lineNum)
