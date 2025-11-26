@@ -13,7 +13,7 @@ NodeType tokenToBinaryOperator(TokenType type){
 	case TokenType::exponent:
 		return NodeType::exponentiation;
 	default:
-		throw SystemError("tokenToBinaryOperator unimplemented TokenType", __FILE_NAME__, __LINE__);
+		throw SystemError("tokenToBinaryOperator not a binary operator", __FILE_NAME__, __LINE__);
 	}
 }
 
@@ -24,7 +24,22 @@ NodeType tokenToUnaryOperation(TokenType type){
 	case TokenType::minus:
 		return NodeType::minusSign;
 	default:
-		throw SystemError("tokenToUnaryOperator unimplemented TokenType", __FILE_NAME__, __LINE__);
+		throw SystemError("tokenToUnaryOperator not a unary operator", __FILE_NAME__, __LINE__);
+	}
+}
+
+NodeType tokenToPrimary(TokenType type){
+	switch(type){
+	case TokenType::identifier:
+		return NodeType::identifier;
+	case TokenType::intLiteral:
+		return NodeType::intLiteral;
+	case TokenType::floatLiteral:
+		return NodeType::floatLiteral;
+	case TokenType::string:
+		return NodeType::stringLiteral;
+	default:
+		throw SystemError("tokenToPrimary not a primary", __FILE_NAME__, __LINE__);
 	}
 }
 
@@ -32,42 +47,100 @@ void Parser::emitError(const std::string &msg){
 	throw ParserError(msg);
 }
 
-AstNode* Parser::handleExpression(TokenType delimeter){
-	std::stack<AstNode*> stack;
+AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
+	AstNode *lastPrimary = nullptr;
+	bool prevOperator = false;
+	bool prevUnary = false;
+	std::vector<AstNode*> operatorNodes;
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		if(stack.empty() && isOperator(curToken)){
-			stack.push(new AstNode{ 
-				tokenToUnaryOperation(curToken.type), 
-				UnaryOperation{
-					new AstNode,
+
+		std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
+		for(int i = 0; i < operatorNodes.size(); i++){
+			std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
+		}
+		std::cout << std::endl;
+		if(curToken.type == delimeter){
+			// TODO: Finish AST
+			if(!operatorNodes.empty() && lastPrimary){
+				AstNode *lastOp = operatorNodes.back();
+				if(isPrefixOperator(lastOp->type)){
+					lastOp->as<UnaryOperation>().expr = lastPrimary;
+				} else if(isBinaryOperator(lastOp->type)){
+					lastOp->as<BinaryOperation>().right = lastPrimary;
 				}
-			});
-		} else if(isOperator(curToken) && isOperator(stack.top()->type)){
-			AstNode *newNode = new AstNode{
-				tokenToUnaryOperation(curToken.type),
-				UnaryOperation{
-					new AstNode,
-				}
-			};
-			while(!stack.empty() && getRbp(stack.top()->type) > getLbp(newNode->type)){
-				stack.pop();
 			}
-			stack.push(newNode);
-		} else if(isOperator(curToken)){
-				
-		} else if(curToken.type == TokenType::identifier){
-			AstNode *newNode = new AstNode{
-				NodeType::identifier,
-				Identifier{ curToken.text }
-			};
+			break;
+		} else if(isOperator(curToken) && (!lastPrimary || prevOperator)){ // Prefix Operator
+			AstNode *newNode = new AstNode(
+				tokenToUnaryOperation(curToken.type),
+				UnaryOperation()
+			);
+			operatorNodes.push_back(newNode);
+			lastPrimary = nullptr;
+			prevUnary = true;
+			prevOperator = true;
+		} else if(isOperator(curToken)){ // Binary/Postfix Operator
+			std::cout << "Add binary/postfix operator" << std::endl;
+			AstNode *newNode; 
+			if(isPostfixOp(curToken.type)){
+				newNode = new AstNode(
+					tokenToUnaryOperation(curToken.type),
+					UnaryOperation{}
+				);
+			} else {
+				newNode = new AstNode(
+					tokenToBinaryOperator(curToken.type),
+					BinaryOperation{}
+				);
+			}
+			if(!operatorNodes.empty() && getRbp(operatorNodes.back()->type) <= getLbp(newNode->type)){
+				newNode->as<BinaryOperation>().left = lastPrimary;
+			} else if(!operatorNodes.empty()) {
+				operatorNodes.back()->as<BinaryOperation>().right = lastPrimary;
+			}
+			while(operatorNodes.size() >= 2){
+				AstNode *last = operatorNodes.back();
+				AstNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
+				if(getRbp(last->type) <= getLbp(newNode->type)){
+					break;
+				} else if(getRbp(secLast->type) < getLbp(newNode->type)){
+					newNode->as<BinaryOperation>().left = last;
+					operatorNodes.pop_back();
+				} else {
+					secLast->as<BinaryOperation>().right = last;
+					operatorNodes.pop_back();
+				}
+			}
+			if(operatorNodes.size() == 1 && getRbp(operatorNodes.back()->type) > getLbp(newNode->type)){
+				newNode->as<BinaryOperation>().left = operatorNodes.back();
+				operatorNodes.pop_back();
+			} else if(operatorNodes.empty()){
+				newNode->as<BinaryOperation>().left = lastPrimary;
+			}
+			operatorNodes.push_back(newNode);
+			lastPrimary = nullptr;
+			prevUnary = false;
+			prevOperator = true;
+		} else if(isPrimary(curToken)){
+			if(lastPrimary){
+				emitError("Expected an operator");
+			}
+			AstNode *newNode = new AstNode(
+				tokenToPrimary(curToken.type),
+				Primary{curToken.text}
+			);
+			lastPrimary = newNode;
+			prevOperator = false;
+			prevUnary = false;
 		}
 		tokenInd++;
 	}
-	return stack.top();
+	return operatorNodes.front();
 }
 AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
-	AstNode *exp = handleExpression(TokenType::newline);	
+	AstNode *exp = handleExpression(TokenType::newline, 0);	
+	std::cout << "Finished parsing" << std::endl;
 	return AbstractSyntaxTree(exp);
 }

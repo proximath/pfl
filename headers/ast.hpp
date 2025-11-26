@@ -13,10 +13,26 @@ struct AbstractSyntaxTree {
     {
     }
     void print(AstNode *node, int level = 0){
+        if(node == nullptr){
+            throw SystemError("AbstractSyntaxTree::print node is null");
+        }
         for(int i = 0; i < 4 * level; i++){
             std::cout << " ";
         }
-        std::cout << getNodeTypeName(node->type) << " | ";
+        if(isOperator(node->type)){
+            if(isBinaryOperator(node->type)){
+                std::cout << getNodeTypeName(node->type) << std::endl;
+                print(node->as<BinaryOperation>().left, level + 1);
+                print(node->as<BinaryOperation>().right, level + 1);
+            } else {
+                std::cout << getNodeTypeName(node->type) << std::endl;
+                print(node->as<UnaryOperation>().expr, level + 1);
+            }
+        } else if(isPrimary(node->type)){
+            std::cout << getNodeTypeName(node->type) << " | " << node->as<Primary>().text << std::endl;
+        } else {
+            throw SystemError("AbstractSyntaxTree::print unimplemented", __FILE_NAME__, __LINE__);
+        }
     }
 };
 

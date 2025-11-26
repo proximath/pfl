@@ -20,7 +20,7 @@ private:
     std::stack<Parentheses> parenStack;
     int tokenInd = 0;
 
-    AstNode* handleExpression(TokenType);
+    AstNode* handleExpression(TokenType, int);
     void emitError(const std::string&);
 public:
     AbstractSyntaxTree parse(std::vector<Token>);
@@ -28,3 +28,4 @@ public:
 
 NodeType tokenToBinaryOperator(TokenType);
 NodeType tokenToUnaryOperator(TokenType);
+NodeType tokenToPrimary(TokenType);

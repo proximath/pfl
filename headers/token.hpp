@@ -256,3 +256,11 @@ static TokenType getMatchingBrace(const TokenType braceType){
         throw SystemError("At getMatchingBrace not a brace", __FILE_NAME__, __LINE__);
     }
 }
+
+static bool isPrefixOp(const TokenType type){
+    return false;
+}
+
+static bool isPostfixOp(const TokenType type){
+    return false;
+}

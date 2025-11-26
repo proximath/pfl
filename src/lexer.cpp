@@ -72,6 +72,8 @@ TokenType Lexer::getTokenType(){
         return TokenType::string;
     case State::escape:
         return escapeToTokenType(prefix);
+    case State::newline:
+        return TokenType::newline;
     }
     throw SystemError("Lexer::getTokenType, not implemented state", __FILE_NAME__, __LINE__);
 }
@@ -257,7 +259,9 @@ std::optional<Token> Lexer::getNextToken(){
             break;
         case State::newline:
             ignoreChar();
+            returned = createNewToken();
             curState = State::normal;
+            return returned;
             break;
         case State::escape:
             c = ignoreChar();

@@ -53,14 +53,20 @@ static const char* getNodeTypeName(NodeType type){
     }
 }
 
-static std::unordered_map<NodeType, std::pair<int, int>> bindingPowerLookup = {
-    { NodeType::addition, { 11, 10 } },
-    { NodeType::subtraction, { 11, 10 } },
-    { NodeType::multiplication, { 21, 20 } },
-    { NodeType::division, { 21, 20 } },
-    { NodeType::exponentiation, { 31, 30 } },
-    { NodeType::plusSign, { 0, 100 } },
-    { NodeType::minusSign, { 0, 100 } }
+struct OperatorInfo {
+    int lbp, rbp;
+    bool binary;
+    bool prefix;
+};
+
+static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
+    { NodeType::addition, { 10, 11, true, false } },
+    { NodeType::subtraction, { 10, 11, true, false } },
+    { NodeType::multiplication, { 20, 21, true, false } },
+    { NodeType::division, { 20, 21, true, false } },
+    { NodeType::exponentiation, { 11, 10, true, false } },
+    { NodeType::plusSign, { 11, 10, true, false } },
+    { NodeType::minusSign, { 11, 10, true, false } }
 };
 
 static bool isPrimary(NodeType type){
@@ -71,39 +77,49 @@ static bool isPrimary(NodeType type){
 }
 
 static bool isOperator(NodeType type){
-    return type == NodeType::addition ||
-    type == NodeType::subtraction ||
-    type == NodeType::exponentiation ||
-    type == NodeType::multiplication ||
-    type == NodeType::division ||
-    type == NodeType::plusSign ||
-    type == NodeType::minusSign;
+    return operatorInfoLookup.count(type);
+}
+
+static bool isBinaryOperator(NodeType type){
+    return operatorInfoLookup[type].binary;
+}
+
+static bool isUnaryOperator(NodeType type){
+    return !operatorInfoLookup[type].binary;
+}
+
+static bool isPrefixOperator(NodeType type){
+    return operatorInfoLookup[type].prefix;
+}
+
+static bool isPostfixOperator(NodeType type){
+    return !operatorInfoLookup[type].prefix;
 }
 
 static int getLbp(NodeType type){
     if(isPrimary(type)){
-        return 0;
+        return 1000000;
     }
-    if(!bindingPowerLookup.count(type)){
+    if(!operatorInfoLookup.count(type)){
         throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
     }
-    return bindingPowerLookup[type].first;
+    return operatorInfoLookup[type].lbp;
 }
 
 static int getRbp(NodeType type){
     if(isPrimary(type)){
         return 0;
     }
-    if(!bindingPowerLookup.count(type)){
+    if(!operatorInfoLookup.count(type)){
         throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
     }
-    return bindingPowerLookup[type].second;
+    return operatorInfoLookup[type].rbp;
 }
 
 class AstNode;
 
-struct Identifier {
-    std::string name;
+struct Primary {
+    std::string text;
 };
 
 struct BinaryOperation {
@@ -124,7 +140,7 @@ struct VariableDeclaration {
 struct AstNode {
     NodeType type;
     std::variant<
-        Identifier,
+        Primary,
         BinaryOperation,
         UnaryOperation,
         VariableDeclaration
