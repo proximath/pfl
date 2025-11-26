@@ -54,7 +54,6 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 	std::vector<AstNode*> operatorNodes;
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-
 		std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
 		for(int i = 0; i < operatorNodes.size(); i++){
 			std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
@@ -69,6 +68,16 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 				} else if(isBinaryOperator(lastOp->type)){
 					lastOp->as<BinaryOperation>().right = lastPrimary;
 				}
+			}
+			while(operatorNodes.size() >= 2){
+				AstNode *last = operatorNodes.back();
+				AstNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
+				if(isPrefixOperator(last->type)){
+					secLast->as<UnaryOperation>().expr = last;
+				} else {
+					secLast->as<BinaryOperation>().right = last;
+				}
+				operatorNodes.pop_back();
 			}
 			break;
 		} else if(isOperator(curToken) && (!lastPrimary || prevOperator)){ // Prefix Operator
@@ -133,14 +142,26 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 			lastPrimary = newNode;
 			prevOperator = false;
 			prevUnary = false;
+		} else if(isOpeningBrace(curToken)){
+			tokenInd++;
+			lastPrimary = handleExpression(getMatchingBrace(curToken.type), 0);
+			prevOperator = false;
+			prevUnary = false;
 		}
 		tokenInd++;
 	}
-	return operatorNodes.front();
+	if(!operatorNodes.empty()){
+		return operatorNodes.front();
+	} else if(lastPrimary){
+		return lastPrimary;	
+	} else {
+		return nullptr;
+	}
 }
 AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
 	AstNode *exp = handleExpression(TokenType::newline, 0);	
 	std::cout << "Finished parsing" << std::endl;
+	tokenInd = 0;
 	return AbstractSyntaxTree(exp);
 }

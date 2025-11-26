@@ -22,6 +22,7 @@ struct AbstractSyntaxTree {
         if(isOperator(node->type)){
             if(isBinaryOperator(node->type)){
                 std::cout << getNodeTypeName(node->type) << std::endl;
+                // std::cout << node->as<BinaryOperation>().right << std::endl;
                 print(node->as<BinaryOperation>().left, level + 1);
                 print(node->as<BinaryOperation>().right, level + 1);
             } else {

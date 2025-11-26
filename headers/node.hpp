@@ -64,7 +64,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::subtraction, { 10, 11, true, false } },
     { NodeType::multiplication, { 20, 21, true, false } },
     { NodeType::division, { 20, 21, true, false } },
-    { NodeType::exponentiation, { 11, 10, true, false } },
+    { NodeType::exponentiation, { 31, 30, true, false } },
     { NodeType::plusSign, { 11, 10, true, false } },
     { NodeType::minusSign, { 11, 10, true, false } }
 };
