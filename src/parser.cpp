@@ -61,8 +61,73 @@ void Parser::emitError(const std::string &msg){
 	throw ParserError(msg);
 }
 
-AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
-	std::cout << "New exp" << std::endl;
+Token& Parser::getCurToken(){
+	if(tokenInd >= tokens.size()){
+		emitError("Parser::getCurToken index out of bounds");
+	}
+	return tokens[tokenInd];
+}
+
+Token* Parser::discardToken(TokenType type){
+	if(getCurToken().type == type){
+		return &(tokens[tokenInd++]);
+	}
+	return nullptr;
+}
+
+Token& Parser::expectToken(TokenType type){
+	if(getCurToken().type != type){
+		emitError(std::string("Expected token " + tokenTypeName(type)));
+	}
+	return tokens[tokenInd++];
+}
+
+AstNode* Parser::handleFnParamList(){
+	AstNode *returned = new AstNode(NodeType::fnParamList, FnParamList{});
+	expectToken(TokenType::parenStart);
+	while(tokenInd < tokens.size()){
+		if(getCurToken().type == TokenType::parenEnd){
+			break;
+		}
+		Token &name = expectToken(TokenType::identifier);
+		returned->as<FnParamList>().params.push_back(
+			new AstNode(NodeType::identifier, Identifier{name.text})
+		);
+		if(getCurToken().type == TokenType::parenEnd){
+			break;
+		}
+		expectToken(TokenType::comma);
+	}
+	expectToken(TokenType::parenEnd);
+	return returned;
+}
+
+AstNode* Parser::handleBlock(){
+	AstNode *returned = new AstNode(NodeType::block, Block{});
+	int indentLevel = 0;
+	while(tokenInd < tokens.size()){
+		AstNode *exp = handleExpression(TokenType::newline);
+		returned->as<Block>().expressions.push_back(exp);
+	}
+	return returned;
+}
+
+AstNode* Parser::handleFn(){
+	AstNode *returned = new AstNode(NodeType::function, Function{});
+	expectToken(TokenType::fnKeyword);
+	Token& name = expectToken(TokenType::identifier);
+	returned->as<Function>().name = new AstNode(NodeType::identifier, Identifier{name.text});
+	AstNode *paramList = handleFnParamList();
+	returned->as<Function>().paramList = paramList;
+	expectToken(TokenType::colon);
+	discardToken(TokenType::newline);
+	discardToken(TokenType::indent);
+	AstNode *block = handleBlock();
+	returned->as<Function>().block = block;
+	return returned;
+}
+
+AstNode* Parser::handleExpression(TokenType delimeter){
 	AstNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
@@ -70,7 +135,7 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
+		//std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
 		for(int i = 0; i < operatorNodes.size(); i++){
 			std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
 		}
@@ -162,13 +227,16 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 			prevUnary = false;
 		} else if(isOpeningBrace(curToken)){
 			tokenInd++;
-			lastPrimary = handleExpression(getMatchingBrace(curToken.type), 0);
+			lastPrimary = handleExpression(getMatchingBrace(curToken.type));
 			AbstractSyntaxTree(lastPrimary).print(lastPrimary);
 			std::cout << getNodeTypeName(lastPrimary->type) << std::endl;
 			std::cout << tokenInd << std::endl;
 			prevOperator = false;
 			prevUnary = false;
 			continue;
+		} else if(curToken.type == TokenType::fnKeyword){
+			AstNode *func = handleFn();
+			return func;
 		}
 		tokenInd++;
 
@@ -183,7 +251,7 @@ AstNode* Parser::handleExpression(TokenType delimeter, int minBp){
 }
 AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
-	AstNode *exp = handleExpression(TokenType::newline, 0);	
+	AstNode *exp = handleFn();	
 	std::cout << "Finished parsing" << std::endl;
 	return AbstractSyntaxTree(exp);
 }

@@ -25,6 +25,9 @@ enum class NodeType {
     greaterThan,
     lessEqual,
     greaterEqual,
+    function,
+    fnParamList,
+    block,
 };
 
 static const char* getNodeTypeName(NodeType type){
@@ -69,6 +72,12 @@ static const char* getNodeTypeName(NodeType type){
             return "lessEqual";
         case NodeType::greaterEqual:
             return "greaterEqual";
+        case NodeType::function:
+            return "function";
+        case NodeType::fnParamList:
+            return "fnParamList";
+        case NodeType::block:
+            return "block";
         default:
             throw SystemError("getNodeTypeName trying to get name of unimplemented node type", __FILE_NAME__, __LINE__);
     }
@@ -98,7 +107,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
 };
 
 static bool isPrimary(NodeType type){
-    return type == NodeType::identifier ||
+    return 
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
     type == NodeType::stringLiteral;
@@ -165,13 +174,35 @@ struct VariableDeclaration {
     AstNode *value;
 };
 
+struct Identifier {
+    std::string name;
+};
+
+struct FnParamList {
+    std::vector<AstNode*> params;
+};
+
+struct Function {
+    AstNode *paramList;
+    AstNode *name;
+    AstNode *block;
+};
+
+struct Block {
+    std::vector<AstNode*> expressions;
+};
+
 struct AstNode {
     NodeType type;
     std::variant<
         Primary,
         BinaryOperation,
         UnaryOperation,
-        VariableDeclaration
+        VariableDeclaration,
+        Function,
+        FnParamList,
+        Identifier,
+        Block
     > data;
     AstNode(){}
     AstNode(NodeType type)

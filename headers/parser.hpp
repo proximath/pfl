@@ -6,21 +6,18 @@
 
 #include <stack>
 
-struct Parentheses {
-    int lineStart, colStart;
-    int depth;
-    char delimeter;
-};
-
 class Parser {
 private:
     std::vector<Token> tokens;
-    int spaceIndent = -1;
-    int tabIndent = -1;
-    std::stack<Parentheses> parenStack;
     int tokenInd = 0;
 
-    AstNode* handleExpression(TokenType, int);
+    Token& getCurToken();
+    Token& expectToken(TokenType);
+    Token* discardToken(TokenType);
+    AstNode* handleFnParamList();
+    AstNode* handleBlock();
+    AstNode* handleFn();
+    AstNode* handleExpression(TokenType);
     void emitError(const std::string&);
 public:
     AbstractSyntaxTree parse(std::vector<Token>);

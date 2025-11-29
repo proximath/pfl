@@ -32,6 +32,23 @@ struct AbstractSyntaxTree {
             }
         } else if(isPrimary(node->type)){
             std::cout << getNodeTypeName(node->type) << " | " << node->as<Primary>().text << std::endl;
+        } else if(node->type == NodeType::identifier){
+            std::cout << getNodeTypeName(node->type) << " | " << node->as<Identifier>().name << std::endl; 
+        } else if(node->type == NodeType::fnParamList){
+            std::cout << getNodeTypeName(node->type) << std::endl;
+            for(AstNode *param : node->as<FnParamList>().params){
+                print(param, level + 1);
+            }
+        } else if(node->type == NodeType::function){
+            std::cout << getNodeTypeName(node->type) << std::endl;
+            print(node->as<Function>().name, level + 1);
+            print(node->as<Function>().paramList, level + 1);
+            print(node->as<Function>().block, level + 1);
+        } else if(node->type == NodeType::block){
+            std::cout << getNodeTypeName(node->type) << std::endl;
+            for(AstNode *expr : node->as<Block>().expressions){
+                print(expr, level + 1);
+            }
         } else {
             throw SystemError("AbstractSyntaxTree::print unimplemented", __FILE_NAME__, __LINE__);
         }
