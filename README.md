@@ -1,5 +1,12 @@
 # PFL
 
-Stands for **Painfully Functional Language*. Why is it painful? Because it is pure, for the sake of being pure, disregarding the ergonomics entirely.
+Stands for **Plain Functional Language**. 
 
-## Hello World
+## Features
+### Functional
+Everything is a function.
+
+### Interpreted
+Write and run your code without compiling.
+
+### Strong Typing

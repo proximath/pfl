@@ -42,20 +42,22 @@ NodeType tokenToUnaryOperation(TokenType type){
 	}
 }
 
-NodeType tokenToPrimary(TokenType type){
-	switch(type){
+AstNode* tokenToPrimary(Token &token){
+	switch(token.type){
 	case TokenType::identifier:
-		return NodeType::identifier;
+		return new AstNode(NodeType::identifier, Identifier{token.text});
 	case TokenType::intLiteral:
-		return NodeType::intLiteral;
+		return new AstNode(NodeType::intLiteral, IntLiteral{token.text});
 	case TokenType::floatLiteral:
-		return NodeType::floatLiteral;
+		return new AstNode(NodeType::floatLiteral, FloatLiteral{token.text});
 	case TokenType::string:
-		return NodeType::stringLiteral;
+		return new AstNode(NodeType::stringLiteral, StringLiteral{token.text});
 	default:
 		throw SystemError("tokenToPrimary not a primary", __FILE_NAME__, __LINE__);
 	}
 }
+
+
 
 void Parser::emitError(const std::string &msg){
 	throw ParserError(msg);
@@ -218,10 +220,7 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 			if(lastPrimary){
 				emitError("Expected an operator");
 			}
-			AstNode *newNode = new AstNode(
-				tokenToPrimary(curToken.type),
-				Primary{curToken.text}
-			);
+			AstNode *newNode = tokenToPrimary(curToken); 			
 			lastPrimary = newNode;
 			prevOperator = false;
 			prevUnary = false;

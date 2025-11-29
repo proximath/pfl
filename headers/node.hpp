@@ -155,9 +155,6 @@ static int getRbp(NodeType type){
 
 class AstNode;
 
-struct Primary {
-    std::string text;
-};
 
 struct BinaryOperation {
     AstNode *left;
@@ -172,6 +169,18 @@ struct VariableDeclaration {
     AstNode *variableName;
     AstNode *typeName;
     AstNode *value;
+};
+
+struct IntLiteral {
+    std::string value;
+};
+
+struct StringLiteral {
+    std::string value;
+};
+
+struct FloatLiteral {
+    std::string value;
 };
 
 struct Identifier {
@@ -195,13 +204,15 @@ struct Block {
 struct AstNode {
     NodeType type;
     std::variant<
-        Primary,
+        Identifier,
+        IntLiteral,
+        FloatLiteral,
+        StringLiteral,
         BinaryOperation,
         UnaryOperation,
         VariableDeclaration,
         Function,
         FnParamList,
-        Identifier,
         Block
     > data;
     AstNode(){}
