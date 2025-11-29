@@ -17,6 +17,8 @@ private:
     AstNode* handleFnParamList();
     AstNode* handleBlock();
     AstNode* handleFn();
+    AstNode* handleIf();
+    AstNode* handleElse();
     AstNode* handleExpression(TokenType);
     void emitError(const std::string&);
 public:

@@ -106,10 +106,12 @@ AstNode* Parser::handleFnParamList(){
 
 AstNode* Parser::handleBlock(){
 	AstNode *returned = new AstNode(NodeType::block, Block{});
-	int indentLevel = 0;
 	while(tokenInd < tokens.size()){
 		AstNode *exp = handleExpression(TokenType::newline);
 		returned->as<Block>().expressions.push_back(exp);
+		if(tokenInd < tokens.size() && discardToken(TokenType::indent)){
+			break;
+		}
 	}
 	return returned;
 }
@@ -138,10 +140,10 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
 		//std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
-		for(int i = 0; i < operatorNodes.size(); i++){
-			std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
-		}
-		std::cout << std::endl;
+		// for(int i = 0; i < operatorNodes.size(); i++){
+		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
+		// }
+		// std::cout << std::endl;
 		if(curToken.type == delimeter){
 			if(!operatorNodes.empty() && lastPrimary){
 				AstNode *lastOp = operatorNodes.back();
@@ -227,9 +229,6 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 		} else if(isOpeningBrace(curToken)){
 			tokenInd++;
 			lastPrimary = handleExpression(getMatchingBrace(curToken.type));
-			AbstractSyntaxTree(lastPrimary).print(lastPrimary);
-			std::cout << getNodeTypeName(lastPrimary->type) << std::endl;
-			std::cout << tokenInd << std::endl;
 			prevOperator = false;
 			prevUnary = false;
 			continue;
@@ -250,7 +249,11 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 }
 AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
-	AstNode *exp = handleFn();	
+	AstNode *root = new AstNode(NodeType::block, Block{});
+	while(tokenInd < tokens.size()){
+		AstNode *exp = handleExpression(TokenType::newline);	
+		root->as<Block>().expressions.push_back(exp);
+	}
 	std::cout << "Finished parsing" << std::endl;
-	return AbstractSyntaxTree(exp);
+	return AbstractSyntaxTree(root);
 }

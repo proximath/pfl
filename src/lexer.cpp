@@ -75,9 +75,10 @@ TokenType Lexer::getTokenType(){
     case State::newline:
         return TokenType::newline;
     case State::leadingSpace:
-        if((indentLevel - prevIndentLevel) % indentSpace){
+        if(indentSpace % indentSpace){
             emitError("Inconsistent indent spacing");
         }
+        std::cout << indentLevel << " " << prevIndentLevel << " " << indentSpace << std::endl;
         prefix = std::move(std::to_string((indentLevel - prevIndentLevel) / indentSpace));
         return TokenType::indent;
     }
@@ -226,7 +227,7 @@ std::optional<Token> Lexer::getNextToken(){
             if(indentLevel != prevIndentLevel){
                 returned = createNewToken();
                 curState = State::normal;
-                prevIndentLevel = indentLevel;
+                prevIndentLevel = indentLevel / indentSpace;
                 return returned;
             }
             curState = State::normal;

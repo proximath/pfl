@@ -33,7 +33,7 @@ ReplReadLineStatus replReadLine(std::stringstream &stream, std::string &line){
         std::cout << "\033[0m";
 
     }
-    stream << line;
+    stream << line << '\n';
     return ReplReadLineStatus::success;
 }
 
