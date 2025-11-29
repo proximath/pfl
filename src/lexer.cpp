@@ -74,12 +74,19 @@ TokenType Lexer::getTokenType(){
         return escapeToTokenType(prefix);
     case State::newline:
         return TokenType::newline;
+    case State::leadingSpace:
+        if((indentLevel - prevIndentLevel) % indentSpace){
+            emitError("Inconsistent indent spacing");
+        }
+        prefix = std::move(std::to_string((indentLevel - prevIndentLevel) / indentSpace));
+        return TokenType::indent;
     }
     throw SystemError("Lexer::getTokenType, not implemented state", __FILE_NAME__, __LINE__);
 }
 
 Token Lexer::createNewToken(){
-    Token returned = Token{ lineNum, colNum, prefix, getTokenType() }; 
+    TokenType type = getTokenType();
+    Token returned = Token{ lineNum, colNum, prefix, type }; 
     prefix = "";
     prefixColStart = colNum;
     return returned;
@@ -117,7 +124,7 @@ std::optional<Token> Lexer::getNextToken(){
         //std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
         if(readStatus == ReadLineStatus::readNewLine){
-            //std::cerr << "READED: " << line << std::endl;
+            // std::cerr << "READED: " << line << std::endl;
         }
         if(readStatus == ReadLineStatus::endReached){
             return std::optional<Token>();
@@ -140,7 +147,11 @@ std::optional<Token> Lexer::getNextToken(){
             } else if(c == '\n'){
                 curState = State::newline;
             } else if(isspace(c)){
-                curState = State::space;
+                if(colNum == 0){
+                    curState = State::leadingSpace;
+                } else {
+                    curState = State::space;
+                }
             } else if(c == '\\'){
                 curState = State::escape;
             } else {
@@ -198,13 +209,28 @@ std::optional<Token> Lexer::getNextToken(){
             return returned;
             break;
         case State::space:
-            while(isspace(c)){
+            while(isspace(c) && c != '\n'){
                 c = ignoreChar();
             }
             curState = State::normal;
             break;
         case State::leadingSpace:
-            
+            indentLevel = 0;
+            while(isspace(c)){
+                c = ignoreChar();
+                indentLevel++;
+            }
+            if(indentSpace == -1 && indentLevel != 0){
+                indentSpace = indentLevel;
+            }
+            if(indentLevel != prevIndentLevel){
+                returned = createNewToken();
+                curState = State::normal;
+                prevIndentLevel = indentLevel;
+                return returned;
+            }
+            curState = State::normal;
+            break;
         case State::comment:
             while(true){
                 c = ignoreChar();
@@ -260,12 +286,12 @@ std::optional<Token> Lexer::getNextToken(){
         case State::newline:
             ignoreChar();
             returned = createNewToken();
-            curState = State::normal;
+            curState = State::leadingSpace;
             return returned;
             break;
         case State::escape:
             c = ignoreChar();
-            std::cerr << int(c) << std::endl;
+            //std::cerr << int(c) << std::endl;
             if(c == '\n'){
                 curState = State::newline;
             } else {
@@ -288,29 +314,22 @@ std::vector<Token> Lexer::getRemainingTokens(){
     return returned;
 }
 
+std::unordered_map<State, const char*> stateNameLookup = {
+    { State::normal, "normal" },
+    { State::word, "word" },
+    { State::number, "number" },
+    { State::space, "space" },
+    { State::comment, "comment" },
+    { State::multiComment, "multiComment" },
+    { State::symbol, "symbol" },
+    { State::escape, "escape" },
+    { State::string, "string" },
+    { State::newline, "newline" },
+};
+
 std::string_view stateName(State state){
-    switch(state){
-    case State::normal:
-        return "normal";
-    case State::word:
-        return "word";
-    case State::number:
-        return "number";
-    case State::space:
-        return "space";
-    case State::comment:
-        return "comment";
-    case State::multiComment:
-        return "multiComment";
-    case State::symbol:
-        return "symbol";
-    case State::escape:
-        return "escape";
-    case State::string:
-        return "string";
-    case State::newline:
-        return "newline";
-    default:
-        throw SystemError("function `stateName` is unimplemented!", __FILE_NAME__, __LINE__);
+    if(!stateNameLookup.count(state)){
+        throw SystemError("function `stateName` this state is unimplemented!", __FILE_NAME__, __LINE__);
     }
+    return stateNameLookup[state];
 }

@@ -14,7 +14,8 @@ struct AbstractSyntaxTree {
     }
     void print(AstNode *node, int level = 0){
         if(node == nullptr){
-            throw SystemError("AbstractSyntaxTree::print node is null");
+            std::cout << "[NULL]" << std::endl;
+            return;
         }
         for(int i = 0; i < 4 * level; i++){
             std::cout << " ";

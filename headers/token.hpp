@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include <unordered_map>
+#include <unordered_set>
 
 enum class TokenType {
     placeholder, // Don't use
@@ -60,6 +61,7 @@ enum class TokenType {
     escapeDoubleQuote,
     escapeFormatStart,
     escapeFormatEnd,
+    indent,
 };
 
 struct Token {
@@ -163,6 +165,7 @@ static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::escapeDoubleQuote, "escapeDoubleQuote" },
     { TokenType::escapeFormatStart, "escapeFormatStart" },
     { TokenType::escapeFormatEnd, "escapeFormatEnd" },
+    { TokenType::indent, "indent" },
 };
 
 static std::unordered_map<std::string, TokenType> escapeCharsLookup = {
@@ -173,6 +176,22 @@ static std::unordered_map<std::string, TokenType> escapeCharsLookup = {
     { "\\\"", TokenType::escapeDoubleQuote },
     { "\\{", TokenType::escapeFormatStart },
     { "\\}", TokenType::escapeFormatEnd },
+};
+
+static std::unordered_set<TokenType> operatorLookup = {
+    TokenType::plus,
+    TokenType::minus,
+    TokenType::asterisk,
+    TokenType::slash,
+    TokenType::exponent,
+    TokenType::root,
+    TokenType::equal,
+    TokenType::doubleEqual,
+    TokenType::notEqual,
+    TokenType::less,
+    TokenType::lessEqual,
+    TokenType::more,
+    TokenType::moreEqual
 };
 
 static const std::string& tokenTypeName(TokenType tt){
@@ -211,6 +230,7 @@ static bool isPrimary(const TokenType type){
     return 
     type == TokenType::intLiteral || 
     type == TokenType::floatLiteral || 
+    type == TokenType::string ||
     type == TokenType::identifier;
 }
 
@@ -219,18 +239,11 @@ static bool isPrimary(const Token &token){
 }
 
 static bool isOperator(const TokenType type){
-    return
-    type == TokenType::plus ||
-    type == TokenType::minus ||
-    type == TokenType::asterisk ||
-    type == TokenType::slash ||
-    type == TokenType::exponent ||
-    type == TokenType::root;
+    return operatorLookup.count(type);
 }
 
 static bool isOperator(const Token &token){
     return isOperator(token.type);
-
 }
 
 static bool isOpeningBrace(const TokenType type){

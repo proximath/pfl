@@ -85,7 +85,9 @@ void interpreter(const std::string &path){
             std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
         }
         std::cout << "]" << std::endl;
-
+        Parser parser;
+        AbstractSyntaxTree ast = parser.parse(tokens);
+        ast.print(ast.root);
     } catch(LexerError err){
         std::cout << err.what() << std::endl;
     }

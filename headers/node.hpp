@@ -18,6 +18,13 @@ enum class NodeType {
     exponentiation,
     plusSign,
     minusSign,
+    assignment,
+    equality,
+    inequality,
+    lessThan,
+    greaterThan,
+    lessEqual,
+    greaterEqual,
 };
 
 static const char* getNodeTypeName(NodeType type){
@@ -48,6 +55,20 @@ static const char* getNodeTypeName(NodeType type){
             return "plusSign";
         case NodeType::minusSign:
             return "minusSign";
+        case NodeType::assignment:
+            return "assignment";
+        case NodeType::equality:
+            return "equality";
+        case NodeType::inequality:
+            return "inequality";
+        case NodeType::lessThan:
+            return "lessThan";
+        case NodeType::greaterThan:
+            return "greaterThan";
+        case NodeType::lessEqual:
+            return "lessEqual";
+        case NodeType::greaterEqual:
+            return "greaterEqual";
         default:
             throw SystemError("getNodeTypeName trying to get name of unimplemented node type", __FILE_NAME__, __LINE__);
     }
@@ -64,9 +85,16 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::subtraction, { 10, 11, true, false } },
     { NodeType::multiplication, { 20, 21, true, false } },
     { NodeType::division, { 20, 21, true, false } },
-    { NodeType::exponentiation, { 31, 30, true, false } },
-    { NodeType::plusSign, { 11, 10, true, false } },
-    { NodeType::minusSign, { 11, 10, true, false } }
+    { NodeType::exponentiation, { 30, 31, true, false } },
+    { NodeType::plusSign, { 100, 101, false, true } },
+    { NodeType::minusSign, { 100, 101, false, true } },
+    { NodeType::assignment, { 3, 4, true, false } },
+    { NodeType::equality, { 5, 6, true, false } },
+    { NodeType::inequality, { 5, 6, true, false } },
+    { NodeType::lessThan, { 5, 6, true, false } },
+    { NodeType::greaterThan, { 5, 6, true, false } },
+    { NodeType::lessEqual, { 5, 6, true, false } },
+    { NodeType::greaterEqual, { 5, 6, true, false } },
 };
 
 static bool isPrimary(NodeType type){

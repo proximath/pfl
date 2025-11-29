@@ -34,11 +34,14 @@ private:
     int lineNum = 0;
     int colNum = 0;
     int prefixColStart = 0;
+    int indentLevel = 0;
+    int prevIndentLevel = 0;
+    int indentSpace = -1;
     bool eof = false;
     std::istream *stream;
     std::string line;
     std::string prefix = "";
-    State curState = State::normal;
+    State curState = State::leadingSpace;
     int hashtagCount = 0;
     int hashtagUninterrupted = false;
     bool numberIsFloat = false;
