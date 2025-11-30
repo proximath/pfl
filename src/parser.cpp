@@ -14,6 +14,10 @@ NodeType tokenToBinaryOperator(TokenType type){
 		return NodeType::division;
 	case TokenType::exponent:
 		return NodeType::exponentiation;
+	case TokenType::doubleAmpersand:
+		return NodeType::conjunction;
+	case TokenType::doubleBar:
+		return NodeType::disjunction;
 	case TokenType::equal:
 		return NodeType::assignment;
 	case TokenType::doubleEqual:
@@ -160,6 +164,7 @@ AstNode* Parser::handleFn(){
 }
 
 AstNode* Parser::handleCallArgsList(){
+	expectToken(TokenType::parenStart);
 	AstNode *returned = new AstNode(NodeType::callArgsList, CallArgsList{});
 	while(getPrevToken().type != TokenType::parenEnd){
 		AstNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
@@ -170,7 +175,21 @@ AstNode* Parser::handleCallArgsList(){
 	return returned;
 }
 
-AstNode* Parser::handleExpression(std::vector<TokenType> delimeter){
+AstNode* Parser::handleArrayLiteral(){
+	expectToken(TokenType::squareStart);
+	AstNode *returned = new AstNode(NodeType::arrayLiteral, ArrayLiteral{});
+	while(getPrevToken().type != TokenType::squareEnd){
+		AstNode *elem = handleExpression({ TokenType::comma, TokenType::squareEnd });
+		returned->as<ArrayLiteral>().elements.push_back(elem);
+		if(getCurToken().type == TokenType::squareEnd){
+			break;
+		}
+	}
+	return returned;
+}
+
+AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
+	std::cout << "EXP" << std::endl;
 	AstNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
@@ -178,12 +197,22 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeter){
 
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		//std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
+		std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
 		// for(int i = 0; i < operatorNodes.size(); i++){
 		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
 		// }
 		// std::cout << std::endl;
-		if(std::find(delimeter.begin(), delimeter.end(), curToken.type) != delimeter.end()){
+		//std::cout << (std::find(delimeter.begin(), delimeter.end(), curToken.type)) << " " << (delimeter.end()) << std::endl;
+		bool containsDelimeter = false;
+		for(TokenType delimeter : delimeters){
+			std::cout << "Comparing " << tokenTypeName(delimeter) << std::endl;
+			if(delimeter == curToken.type){
+				containsDelimeter = true;
+				break;
+			}
+		}
+		if(containsDelimeter){
+			std::cout << "HEY" << std::endl;
 			if(!operatorNodes.empty() && lastPrimary){
 				AstNode *lastOp = operatorNodes.back();
 				if(isPrefixOperator(lastOp->type)){
@@ -267,17 +296,17 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeter){
 			lastPrimary = newNode;
 			prevOperator = false;
 			prevUnary = false;
-		} else if(isOpeningBrace(curToken)){
+		} else if(curToken.type == TokenType::parenStart){
 			if(lastPrimary && lastPrimary->type == NodeType::identifier){
 				AstNode *callNode = new AstNode(NodeType::call, Call{});
 				callNode->as<Call>().funcName = lastPrimary;
 				AstNode *args = handleCallArgsList();
 				callNode->as<Call>().arguments = args;
 				lastPrimary = callNode;
-				continue;	
+			} else {
+				tokenInd++;
+				lastPrimary = handleExpression({ TokenType::parenEnd });
 			}
-			tokenInd++;
-			lastPrimary = handleExpression({ getMatchingBrace(curToken.type) });
 			prevOperator = false;
 			prevUnary = false;
 			continue;
@@ -287,10 +316,13 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeter){
 		} else if(curToken.type == TokenType::ifKeyword){
 			AstNode *expr = handleIf();
 			return expr;
+		} else if(curToken.type == TokenType::squareStart){
+			AstNode *array = handleArrayLiteral();
+			return array;
 		}
 		tokenInd++;
-
 	}
+	std::cout << "RET" << std::endl;
 	if(!operatorNodes.empty()){
 		return operatorNodes.front();
 	} else if(lastPrimary){

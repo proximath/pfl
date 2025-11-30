@@ -61,8 +61,21 @@ struct AbstractSyntaxTree {
             std::cout << std::endl;
             print(node->as<Call>().funcName, level + 1);
             print(node->as<Call>().arguments, level + 1);
+        } else if(node->type == NodeType::callArgsList){
+            std::cout << std::endl;
+            for(AstNode *args : node->as<CallArgsList>().args){
+                print(args, level + 1);
+            }
+        } else if(node->type == NodeType::arrayLiteral){
+            std::cout << std::endl;
+            for(AstNode *elem : node->as<ArrayLiteral>().elements){
+                print(elem, level + 1);
+            }
         } else {
-            throw SystemError("AbstractSyntaxTree::print unimplemented", __FILE_NAME__, __LINE__);
+            throw SystemError(
+                std::string("AbstractSyntaxTree::print node type") +
+                getNodeTypeName(node->type) +  "is unimplemented", 
+                __FILE_NAME__, __LINE__);
         }
     }
 };

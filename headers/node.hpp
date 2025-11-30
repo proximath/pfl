@@ -19,6 +19,8 @@ enum class NodeType {
     plusSign,
     minusSign,
     assignment,
+    conjunction,
+    disjunction,
     equality,
     inequality,
     lessThan,
@@ -32,6 +34,8 @@ enum class NodeType {
     call,
     callArgsList,
     memberAccess,
+    forExpr,
+    arrayLiteral,
 };
 
 static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
@@ -49,6 +53,8 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::plusSign, "plusSign" },
     { NodeType::minusSign, "minusSign" },
     { NodeType::assignment, "assignment" },
+    { NodeType::conjunction, "conjunction" },
+    { NodeType::disjunction, "disjunction" },
     { NodeType::equality, "equality" },
     { NodeType::inequality, "inequality" },
     { NodeType::lessThan, "lessThan" },
@@ -61,7 +67,9 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::block, "block" },
     { NodeType::ifExpr, "ifExpr" },
     { NodeType::call, "call" },
-    { NodeType::callArgsList, "callArgsList" }
+    { NodeType::callArgsList, "callArgsList" },
+    { NodeType::forExpr, "forExpr" },
+    { NodeType::arrayLiteral, "arrayLiteral" }
 };
 
 static const char* getNodeTypeName(NodeType type){
@@ -85,14 +93,16 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::exponentiation, { 30, 31, true, false } },
     { NodeType::plusSign, { 100, 101, false, true } },
     { NodeType::minusSign, { 100, 101, false, true } },
-    { NodeType::assignment, { 3, 4, true, false } },
+    { NodeType::assignment, { 1, 2, true, false } },
+    { NodeType::conjunction, { 3, 4, true, false } },
+    { NodeType::disjunction, { 3, 4, true, false } },
     { NodeType::equality, { 5, 6, true, false } },
     { NodeType::inequality, { 5, 6, true, false } },
     { NodeType::lessThan, { 5, 6, true, false } },
     { NodeType::greaterThan, { 5, 6, true, false } },
     { NodeType::lessEqual, { 5, 6, true, false } },
     { NodeType::greaterEqual, { 5, 6, true, false } },
-    { NodeType::memberAccess, { 200, 201, true, false } }
+    { NodeType::memberAccess, { 200, 201, true, false } },
 };
 
 static bool isPrimary(NodeType type){
@@ -198,6 +208,10 @@ struct IfExpr {
     AstNode *elseBlock;
 };
 
+struct ArrayLiteral {
+    std::vector<AstNode*> elements;
+};
+
 struct Call {
     AstNode *funcName;
     AstNode *arguments;
@@ -222,7 +236,8 @@ struct AstNode {
         Block,
         IfExpr,
         Call,
-        CallArgsList
+        CallArgsList,
+        ArrayLiteral
     > data;
     AstNode(){}
     AstNode(NodeType type)

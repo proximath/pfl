@@ -84,6 +84,10 @@ static std::unordered_map<std::string, TokenType> symbolLookup = {
     { "*",  TokenType::asterisk },
     { "//", TokenType::root },
     { "/",  TokenType::slash },
+    { "&",  TokenType::ampersand },
+    { "|",  TokenType::bar },
+    { "&&", TokenType::doubleAmpersand },
+    { "||", TokenType::doubleBar },
     { "<=", TokenType::lessEqual },
     { "<",  TokenType::less },
     { ">=", TokenType::moreEqual },
@@ -189,6 +193,8 @@ static std::unordered_set<TokenType> operatorLookup = {
     TokenType::slash,
     TokenType::exponent,
     TokenType::root,
+    TokenType::doubleAmpersand,
+    TokenType::doubleBar,
     TokenType::equal,
     TokenType::doubleEqual,
     TokenType::notEqual,
@@ -253,9 +259,7 @@ static bool isOperator(const Token &token){
 
 static bool isOpeningBrace(const TokenType type){
     return
-    type == TokenType::parenStart ||
-    type == TokenType::curlyStart ||
-    type == TokenType::squareStart;
+    type == TokenType::parenStart;
 }
 
 static bool isOpeningBrace(const Token &token){
