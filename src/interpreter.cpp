@@ -50,7 +50,7 @@ void repl(){
             break;
         }
         try {
-            std::vector<Token> tokens = lexer.getRemainingTokens();
+            std::vector<Token> tokens = lexer.getTokens();
             std::cout << "[ ";
             for(const Token &token : tokens){
                 std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
@@ -79,7 +79,7 @@ void interpreter(const std::string &path){
     }
     Lexer lexer = Lexer(&is);
     try {
-        std::vector<Token> tokens = lexer.getRemainingTokens();
+        std::vector<Token> tokens = lexer.getTokens();
         std::cout << "[ ";
         for(const Token &token : tokens){
             std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";

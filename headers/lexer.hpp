@@ -58,8 +58,7 @@ private:
 
 public:
     Lexer(std::istream *stream);
-    std::optional<Token> getNextToken();
-    std::vector<Token> getRemainingTokens(); 
+    std::vector<Token> getTokens(); 
 };
 
 std::string_view stateName(State);
