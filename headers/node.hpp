@@ -28,59 +28,47 @@ enum class NodeType {
     function,
     fnParamList,
     block,
+    ifExpr,
+    call,
+    callArgsList,
+    memberAccess,
+};
+
+static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
+    { NodeType::expression, "expression" },
+    { NodeType::primary, "primary" },
+    { NodeType::identifier, "identifier" },
+    { NodeType::intLiteral, "intLiteral" },
+    { NodeType::floatLiteral, "floatLiteral" },
+    { NodeType::stringLiteral, "stringLiteral" },
+    { NodeType::addition, "addition" },
+    { NodeType::subtraction, "subtraction" },
+    { NodeType::multiplication, "multiplication" },
+    { NodeType::division, "division" },
+    { NodeType::exponentiation, "exponentiation" },
+    { NodeType::plusSign, "plusSign" },
+    { NodeType::minusSign, "minusSign" },
+    { NodeType::assignment, "assignment" },
+    { NodeType::equality, "equality" },
+    { NodeType::inequality, "inequality" },
+    { NodeType::lessThan, "lessThan" },
+    { NodeType::greaterThan, "greaterThan" },
+    { NodeType::lessEqual, "lessEqual" },
+    { NodeType::greaterEqual, "greaterEqual" },
+    { NodeType::memberAccess, "memberAccess" },
+    { NodeType::function, "function" },
+    { NodeType::fnParamList, "fnParamList" },
+    { NodeType::block, "block" },
+    { NodeType::ifExpr, "ifExpr" },
+    { NodeType::call, "call" },
+    { NodeType::callArgsList, "callArgsList" }
 };
 
 static const char* getNodeTypeName(NodeType type){
-    switch(type){
-        case NodeType::expression:
-            return "expression";
-        case NodeType::primary:
-            return "primary";
-        case NodeType::identifier:
-            return "identifier";
-        case NodeType::intLiteral:
-            return "intLiteral";
-        case NodeType::floatLiteral:
-            return "floatLiteral";
-        case NodeType::stringLiteral:
-            return "stringLiteral";
-        case NodeType::addition:
-            return "addition";
-        case NodeType::subtraction:
-            return "subtraction";
-        case NodeType::multiplication:
-            return "multiplication";
-        case NodeType::division:
-            return "division";
-        case NodeType::exponentiation:
-            return "exponentiation";
-        case NodeType::plusSign:
-            return "plusSign";
-        case NodeType::minusSign:
-            return "minusSign";
-        case NodeType::assignment:
-            return "assignment";
-        case NodeType::equality:
-            return "equality";
-        case NodeType::inequality:
-            return "inequality";
-        case NodeType::lessThan:
-            return "lessThan";
-        case NodeType::greaterThan:
-            return "greaterThan";
-        case NodeType::lessEqual:
-            return "lessEqual";
-        case NodeType::greaterEqual:
-            return "greaterEqual";
-        case NodeType::function:
-            return "function";
-        case NodeType::fnParamList:
-            return "fnParamList";
-        case NodeType::block:
-            return "block";
-        default:
-            throw SystemError("getNodeTypeName trying to get name of unimplemented node type", __FILE_NAME__, __LINE__);
+    if(!nodeTypeNameLookup.count(type)){
+        throw SystemError("getNodeTypeName not implemented", __FILE__, __LINE__);
     }
+    return nodeTypeNameLookup[type];
 }
 
 struct OperatorInfo {
@@ -104,10 +92,12 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::greaterThan, { 5, 6, true, false } },
     { NodeType::lessEqual, { 5, 6, true, false } },
     { NodeType::greaterEqual, { 5, 6, true, false } },
+    { NodeType::memberAccess, { 200, 201, true, false } }
 };
 
 static bool isPrimary(NodeType type){
     return 
+    type == NodeType::identifier ||
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
     type == NodeType::stringLiteral;
@@ -201,6 +191,22 @@ struct Block {
     std::vector<AstNode*> expressions;
 };
 
+struct IfExpr {
+    AstNode *condition;
+    AstNode *ifBlock;
+    std::vector<AstNode*> elifBlock;
+    AstNode *elseBlock;
+};
+
+struct Call {
+    AstNode *funcName;
+    AstNode *arguments;
+};
+
+struct CallArgsList {
+    std::vector<AstNode*> args;
+};
+
 struct AstNode {
     NodeType type;
     std::variant<
@@ -213,7 +219,10 @@ struct AstNode {
         VariableDeclaration,
         Function,
         FnParamList,
-        Block
+        Block,
+        IfExpr,
+        Call,
+        CallArgsList
     > data;
     AstNode(){}
     AstNode(NodeType type)

@@ -11,6 +11,7 @@ private:
     std::vector<Token> tokens;
     int tokenInd = 0;
 
+    Token& getPrevToken();
     Token& getCurToken();
     Token& expectToken(TokenType);
     Token* discardToken(TokenType);
@@ -18,8 +19,8 @@ private:
     AstNode* handleBlock();
     AstNode* handleFn();
     AstNode* handleIf();
-    AstNode* handleElse();
-    AstNode* handleExpression(TokenType);
+    AstNode* handleCallArgsList();
+    AstNode* handleExpression(std::vector<TokenType>);
     void emitError(const std::string&);
 public:
     AbstractSyntaxTree parse(std::vector<Token>);

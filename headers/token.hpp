@@ -193,7 +193,8 @@ static std::unordered_set<TokenType> operatorLookup = {
     TokenType::less,
     TokenType::lessEqual,
     TokenType::more,
-    TokenType::moreEqual
+    TokenType::moreEqual,
+    TokenType::dot,
 };
 
 static const std::string& tokenTypeName(TokenType tt){

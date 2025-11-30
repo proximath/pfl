@@ -1,5 +1,7 @@
 #include "../headers/parser.hpp"
 
+#include <algorithm>
+
 NodeType tokenToBinaryOperator(TokenType type){
 	switch(type){
 	case TokenType::plus:
@@ -26,6 +28,8 @@ NodeType tokenToBinaryOperator(TokenType type){
 		return NodeType::lessEqual;
 	case TokenType::moreEqual:
 		return NodeType::greaterEqual;
+	case TokenType::dot:
+		return NodeType::memberAccess;
 	default:
 		throw SystemError("tokenToBinaryOperator not a binary operator", __FILE_NAME__, __LINE__);
 	}
@@ -57,8 +61,6 @@ AstNode* tokenToPrimary(Token &token){
 	}
 }
 
-
-
 void Parser::emitError(const std::string &msg){
 	throw ParserError(msg);
 }
@@ -70,8 +72,15 @@ Token& Parser::getCurToken(){
 	return tokens[tokenInd];
 }
 
+Token& Parser::getPrevToken(){
+	if(tokenInd > tokens.size() || tokenInd <= 0){
+		emitError("Parser::getPrevToken index out of bounds");
+	}
+	return tokens[tokenInd - 1];
+}
+
 Token* Parser::discardToken(TokenType type){
-	if(getCurToken().type == type){
+	if(tokenInd < tokens.size() && tokens[tokenInd].type == type){
 		return &(tokens[tokenInd++]);
 	}
 	return nullptr;
@@ -107,11 +116,30 @@ AstNode* Parser::handleFnParamList(){
 AstNode* Parser::handleBlock(){
 	AstNode *returned = new AstNode(NodeType::block, Block{});
 	while(tokenInd < tokens.size()){
-		AstNode *exp = handleExpression(TokenType::newline);
+		AstNode *exp = handleExpression({ TokenType::newline });
 		returned->as<Block>().expressions.push_back(exp);
-		if(tokenInd < tokens.size() && discardToken(TokenType::indent)){
+		if(discardToken(TokenType::indent)){
 			break;
 		}
+	}
+	return returned;
+}
+
+AstNode* Parser::handleIf(){
+	AstNode *returned = new AstNode(NodeType::ifExpr, IfExpr{});
+	expectToken(TokenType::ifKeyword);
+	AstNode *expr = handleExpression({ TokenType::colon });
+	returned->as<IfExpr>().condition = expr;
+	expectToken(TokenType::newline);
+	expectToken(TokenType::indent);	
+	AstNode *ifBlock = handleBlock();
+	returned->as<IfExpr>().ifBlock = ifBlock;
+	if(discardToken(TokenType::elseKeyword)){
+		expectToken(TokenType::colon);
+		expectToken(TokenType::newline);
+		expectToken(TokenType::indent);
+		AstNode *elseBlock = handleBlock();
+		returned->as<IfExpr>().elseBlock = elseBlock;
 	}
 	return returned;
 }
@@ -131,7 +159,18 @@ AstNode* Parser::handleFn(){
 	return returned;
 }
 
-AstNode* Parser::handleExpression(TokenType delimeter){
+AstNode* Parser::handleCallArgsList(){
+	AstNode *returned = new AstNode(NodeType::callArgsList, CallArgsList{});
+	while(getPrevToken().type != TokenType::parenEnd){
+		AstNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
+		//std::cout << "PB " << getNodeTypeName(arg->type) << std::endl;
+		returned->as<CallArgsList>().args.push_back(arg);
+		//std::cout << tokenTypeName(getPrevToken().type) << std::endl;
+	}
+	return returned;
+}
+
+AstNode* Parser::handleExpression(std::vector<TokenType> delimeter){
 	AstNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
@@ -144,7 +183,7 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
 		// }
 		// std::cout << std::endl;
-		if(curToken.type == delimeter){
+		if(std::find(delimeter.begin(), delimeter.end(), curToken.type) != delimeter.end()){
 			if(!operatorNodes.empty() && lastPrimary){
 				AstNode *lastOp = operatorNodes.back();
 				if(isPrefixOperator(lastOp->type)){
@@ -175,7 +214,7 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 			prevUnary = true;
 			prevOperator = true;
 		} else if(isOperator(curToken)){ // Binary/Postfix Operator
-			std::cout << "Add binary/postfix operator" << std::endl;
+			//std::cout << "Add binary/postfix operator" << std::endl;
 			AstNode *newNode; 
 			if(isPostfixOp(curToken.type)){
 				newNode = new AstNode(
@@ -220,6 +259,8 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 			prevOperator = true;
 		} else if(isPrimary(curToken)){
 			if(lastPrimary){
+				std::cerr << getNodeTypeName(lastPrimary->type) << " " << lastPrimary->as<Identifier>().name << " "
+				 << curToken.text << " " << curToken.line_num << " " << curToken.column_num << std::endl;
 				emitError("Expected an operator");
 			}
 			AstNode *newNode = tokenToPrimary(curToken); 			
@@ -227,14 +268,25 @@ AstNode* Parser::handleExpression(TokenType delimeter){
 			prevOperator = false;
 			prevUnary = false;
 		} else if(isOpeningBrace(curToken)){
+			if(lastPrimary && lastPrimary->type == NodeType::identifier){
+				AstNode *callNode = new AstNode(NodeType::call, Call{});
+				callNode->as<Call>().funcName = lastPrimary;
+				AstNode *args = handleCallArgsList();
+				callNode->as<Call>().arguments = args;
+				lastPrimary = callNode;
+				continue;	
+			}
 			tokenInd++;
-			lastPrimary = handleExpression(getMatchingBrace(curToken.type));
+			lastPrimary = handleExpression({ getMatchingBrace(curToken.type) });
 			prevOperator = false;
 			prevUnary = false;
 			continue;
 		} else if(curToken.type == TokenType::fnKeyword){
 			AstNode *func = handleFn();
 			return func;
+		} else if(curToken.type == TokenType::ifKeyword){
+			AstNode *expr = handleIf();
+			return expr;
 		}
 		tokenInd++;
 
@@ -251,9 +303,9 @@ AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
 	AstNode *root = new AstNode(NodeType::block, Block{});
 	while(tokenInd < tokens.size()){
-		AstNode *exp = handleExpression(TokenType::newline);	
+		AstNode *exp = handleExpression({ TokenType::newline });	
 		root->as<Block>().expressions.push_back(exp);
 	}
-	std::cout << "Finished parsing" << std::endl;
+	//std::cout << "Finished parsing" << std::endl;
 	return AbstractSyntaxTree(root);
 }

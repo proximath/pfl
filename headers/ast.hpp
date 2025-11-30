@@ -13,12 +13,12 @@ struct AbstractSyntaxTree {
     {
     }
     void print(AstNode *node, int level = 0){
+        for(int i = 0; i < 4 * level; i++){
+            std::cout << " ";
+        }
         if(node == nullptr){
             std::cout << "[NULL]" << std::endl;
             return;
-        }
-        for(int i = 0; i < 4 * level; i++){
-            std::cout << " ";
         }
         std::cout << getNodeTypeName(node->type);
         if(isOperator(node->type)){
@@ -52,6 +52,15 @@ struct AbstractSyntaxTree {
             for(AstNode *expr : node->as<Block>().expressions){
                 print(expr, level + 1);
             }
+        } else if(node->type == NodeType::ifExpr){
+            std::cout << std::endl;
+            print(node->as<IfExpr>().condition, level + 1);
+            print(node->as<IfExpr>().ifBlock, level + 1);
+            print(node->as<IfExpr>().elseBlock, level + 1);
+        } else if(node->type == NodeType::call){
+            std::cout << std::endl;
+            print(node->as<Call>().funcName, level + 1);
+            print(node->as<Call>().arguments, level + 1);
         } else {
             throw SystemError("AbstractSyntaxTree::print unimplemented", __FILE_NAME__, __LINE__);
         }

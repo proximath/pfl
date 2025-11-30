@@ -227,7 +227,7 @@ std::optional<Token> Lexer::getNextToken(){
             if(indentLevel != prevIndentLevel){
                 returned = createNewToken();
                 curState = State::normal;
-                prevIndentLevel = indentLevel / indentSpace;
+                prevIndentLevel = indentLevel;
                 return returned;
             }
             curState = State::normal;
