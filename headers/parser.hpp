@@ -20,6 +20,7 @@ private:
     AstNode* handleFn();
     AstNode* handleIf();
     AstNode* handleCallArgsList();
+    AstNode* handleArrayLiteral();
     AstNode* handleExpression(std::vector<TokenType>);
     void emitError(const std::string&);
 public:
