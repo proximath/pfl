@@ -118,7 +118,7 @@ AstNode* Parser::handleBlock(){
 	while(tokenInd < tokens.size()){
 		AstNode *exp = handleExpression({ TokenType::newline });
 		returned->as<Block>().expressions.push_back(exp);
-		if(discardToken(TokenType::indent)){
+		if(discardToken(TokenType::dedent)){
 			break;
 		}
 	}

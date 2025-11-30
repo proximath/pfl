@@ -75,11 +75,18 @@ TokenType Lexer::getTokenType(){
     case State::newline:
         return TokenType::newline;
     case State::leadingSpace:
+        throw SystemError("Dont use this case", __FILE_NAME__, __LINE__);
         if(indentSpace % indentSpace){
             emitError("Inconsistent indent spacing");
         }
-        std::cout << indentLevel << " " << prevIndentLevel << " " << indentSpace << std::endl;
-        prefix = std::move(std::to_string((indentLevel - prevIndentLevel) / indentSpace));
+        int tmp = indentLevel;
+        if(indentLevel > prevIndentLevel){
+            while(tmp){
+
+            }
+        }
+        //std::cout << indentLevel << " " << prevIndentLevel << " " << indentSpace << std::endl;
+        //prefix = std::move(std::to_string((indentLevel - prevIndentLevel) / indentSpace));
         return TokenType::indent;
     }
     throw SystemError("Lexer::getTokenType, not implemented state", __FILE_NAME__, __LINE__);
@@ -119,8 +126,8 @@ void Lexer::emitError(const std::string &msg, int col){
     throw LexerError(msg, lineNum, col);
 }
 
-std::optional<Token> Lexer::getNextToken(){
-    Token returned;
+std::vector<Token> Lexer::getTokens(){
+    std::vector<Token> tokens;
     while(true){
         //std::cerr << colNum << " " << stateName(curState) << std::endl;
         ReadLineStatus readStatus = readLineIfEndOfLine();
@@ -128,7 +135,7 @@ std::optional<Token> Lexer::getNextToken(){
             // std::cerr << "READED: " << line << std::endl;
         }
         if(readStatus == ReadLineStatus::endReached){
-            return std::optional<Token>();
+            return tokens;
         }
         char c = line[colNum];
         switch(curState){
@@ -163,9 +170,9 @@ std::optional<Token> Lexer::getNextToken(){
             while(isalnum(c) || c == '_'){
                 c = consumeChar();
             }
-            returned = createNewToken();
+            tokens.push_back(createNewToken());
             curState = State::normal;
-            return returned;
+            break;
         case State::number:
             if(isdigit(c)){
                 consumeChar();
@@ -178,9 +185,8 @@ std::optional<Token> Lexer::getNextToken(){
             } else if(isalpha(c)){
                 emitError("Identifier may not start with a number");
             } else {
-                returned = createNewToken();
+                tokens.push_back(createNewToken());
                 curState = State::normal;
-                return returned;
             }
             break;
         case State::symbol:
@@ -188,9 +194,8 @@ std::optional<Token> Lexer::getNextToken(){
             while(isSymbol(prefix + c)){
                 c = consumeChar();
             }
-            returned = createNewToken();
+            tokens.push_back(createNewToken());
             curState = State::normal;
-            return returned;
             break;
         case State::string:
             c = consumeChar();
@@ -205,9 +210,8 @@ std::optional<Token> Lexer::getNextToken(){
                 c = consumeChar();
             }
             consumeChar();
-            returned = createNewToken();
+            tokens.push_back(createNewToken());
             curState = State::normal;
-            return returned;
             break;
         case State::space:
             while(isspace(c) && c != '\n'){
@@ -216,22 +220,36 @@ std::optional<Token> Lexer::getNextToken(){
             curState = State::normal;
             break;
         case State::leadingSpace:
+        {
             indentLevel = 0;
-            while(isspace(c)){
+            while(isspace(c) && c != '\n'){
                 c = ignoreChar();
                 indentLevel++;
+            }
+            if(c == '\n'){
+                ignoreChar();
+                break;
             }
             if(indentSpace == -1 && indentLevel != 0){
                 indentSpace = indentLevel;
             }
-            if(indentLevel != prevIndentLevel){
-                returned = createNewToken();
-                curState = State::normal;
-                prevIndentLevel = indentLevel;
-                return returned;
+            if((indentLevel - prevIndentLevel) % indentSpace){
+                emitError("Inconsistent spacing");
             }
+            int cnt = abs((indentLevel - prevIndentLevel) / indentSpace);
+            TokenType indentType;
+            if(indentLevel > prevIndentLevel){
+                indentType = TokenType::indent;
+            } else if(indentLevel < prevIndentLevel){
+                indentType = TokenType::dedent;
+            }
+            while(cnt--){
+                tokens.push_back(Token{lineNum, colNum, "", indentType });
+            }
+            prevIndentLevel = indentLevel;
             curState = State::normal;
             break;
+        }
         case State::comment:
             while(true){
                 c = ignoreChar();
@@ -281,18 +299,15 @@ std::optional<Token> Lexer::getNextToken(){
                     curState = State::normal;
                     break;
                 }
-
             }
             break;
         case State::newline:
             ignoreChar();
-            returned = createNewToken();
+            tokens.push_back(createNewToken());
             curState = State::leadingSpace;
-            return returned;
             break;
         case State::escape:
             c = ignoreChar();
-            //std::cerr << int(c) << std::endl;
             if(c == '\n'){
                 curState = State::newline;
             } else {
@@ -304,15 +319,6 @@ std::optional<Token> Lexer::getNextToken(){
             throw SystemError("Unknown state in Lexer::getNextToken", __FILE__, __LINE__);
         } 
     }
-}
-
-std::vector<Token> Lexer::getRemainingTokens(){
-    std::vector<Token> returned;
-    for(std::optional<Token> tok = getNextToken(); tok.has_value();){
-        returned.push_back(tok.value());
-        tok = getNextToken();
-    }
-    return returned;
 }
 
 std::unordered_map<State, const char*> stateNameLookup = {

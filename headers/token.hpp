@@ -62,6 +62,7 @@ enum class TokenType {
     escapeFormatStart,
     escapeFormatEnd,
     indent,
+    dedent,
     eof,
 };
 
@@ -167,6 +168,7 @@ static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::escapeFormatStart, "escapeFormatStart" },
     { TokenType::escapeFormatEnd, "escapeFormatEnd" },
     { TokenType::indent, "indent" },
+    { TokenType::dedent, "dedent" },
     { TokenType::eof, "eof" },
 };
 
