@@ -15,6 +15,7 @@ private:
     Token& getCurToken();
     Token& expectToken(TokenType);
     Token* discardToken(TokenType);
+    Token* tryToken(TokenType);
     AstNode* handleFnParamList();
     AstNode* handleBlock();
     AstNode* handleFn();
@@ -22,7 +23,9 @@ private:
     AstNode* handleCallArgsList();
     AstNode* handleArrayLiteral();
     AstNode* handleExpression(std::vector<TokenType>);
+    AstNode* tryAssignment(std::vector<TokenType>);
     void emitError(const std::string&);
+    void popOperatorStack(std::vector<AstNode*>&, AstNode*&, AstNode*&);
 public:
     AbstractSyntaxTree parse(std::vector<Token>);
 };
