@@ -1,5 +1,9 @@
 #include "../include/utils.hpp"
 #include "../include/lexer.hpp"
+#include "lexer-utils.hpp"
+#include "../token/symbol.hpp"
+#include "../token/keyword.hpp"
+#include "../token/escape-seq.hpp"
 
 Lexer::Lexer(std::istream *stream)
   : stream(stream)
@@ -319,24 +323,4 @@ std::vector<Token> Lexer::getTokens(){
             throw SystemError("Unknown state in Lexer::getNextToken", __FILE__, __LINE__);
         } 
     }
-}
-
-std::unordered_map<State, const char*> stateNameLookup = {
-    { State::normal, "normal" },
-    { State::word, "word" },
-    { State::number, "number" },
-    { State::space, "space" },
-    { State::comment, "comment" },
-    { State::multiComment, "multiComment" },
-    { State::symbol, "symbol" },
-    { State::escape, "escape" },
-    { State::string, "string" },
-    { State::newline, "newline" },
-};
-
-std::string_view stateName(State state){
-    if(!stateNameLookup.count(state)){
-        throw SystemError("function `stateName` this state is unimplemented!", __FILE_NAME__, __LINE__);
-    }
-    return stateNameLookup[state];
 }

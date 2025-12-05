@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../include/token.hpp"
-#include "../include/astnode.hpp"
+#include "../token/token.hpp"
+#include "../ast/astnode.hpp"
 
 NodeType tokenToBinaryOperator(TokenType type){
 	switch(type){
@@ -72,4 +72,47 @@ AstNode* tokenToPrimary(Token &token){
 	default:
 		throw SystemError("tokenToPrimary not a primary", __FILE_NAME__, __LINE__);
 	}
+}
+
+static bool isPrimary(const TokenType type){
+    return 
+    type == TokenType::intLiteral || 
+    type == TokenType::floatLiteral || 
+    type == TokenType::string ||
+    type == TokenType::identifier;
+}
+
+static bool isPrimary(const Token &token){
+    return isPrimary(token.type);
+}
+
+static bool isOpeningBrace(const TokenType type){
+    return
+    type == TokenType::parenStart;
+}
+
+static bool isOpeningBrace(const Token &token){
+    return isOpeningBrace(token.type);
+}
+
+static TokenType getMatchingBrace(const TokenType braceType){
+    switch(braceType){
+    case TokenType::parenStart:
+        return TokenType::parenEnd;
+    case TokenType::curlyStart:
+        return TokenType::curlyEnd;
+    case TokenType::squareStart:
+        return TokenType::squareEnd;
+    default:
+        throw SystemError("At getMatchingBrace not a brace", __FILE_NAME__, __LINE__);
+    }
+}
+
+static bool isPrimary(NodeType type){
+    return 
+    type == NodeType::identifier ||
+    type == NodeType::intLiteral ||
+    type == NodeType::floatLiteral ||
+    type == NodeType::stringLiteral ||
+    type == NodeType::callArgsList;
 }

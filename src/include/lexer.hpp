@@ -1,6 +1,6 @@
 #pragma once
 
-#include "token.hpp"
+#include "../token/token.hpp"
 
 #include <vector>
 #include <functional>
@@ -20,6 +20,19 @@ enum class State {
     leadingSpace,
     newline,
     escape,
+};
+
+static std::unordered_map<State, const char*> stateNameLookup = {
+    { State::normal, "normal" },
+    { State::word, "word" },
+    { State::number, "number" },
+    { State::space, "space" },
+    { State::comment, "comment" },
+    { State::multiComment, "multiComment" },
+    { State::symbol, "symbol" },
+    { State::escape, "escape" },
+    { State::string, "string" },
+    { State::newline, "newline" },
 };
 
 enum class ReadLineStatus {
@@ -60,5 +73,3 @@ public:
     std::vector<Token> getTokens(); 
 };
 
-std::string_view stateName(State);
-TokenType stateToTokenType(State, const std::string&);
