@@ -8,6 +8,7 @@ enum class NodeType {
     expression,
     primary,
     identifier,
+    typedIdentifier,
     intLiteral,
     floatLiteral,
     stringLiteral,
@@ -21,6 +22,7 @@ enum class NodeType {
     assignment,
     conjunction,
     disjunction,
+    negation,
     equality,
     inequality,
     lessThan,
@@ -36,12 +38,15 @@ enum class NodeType {
     memberAccess,
     forExpr,
     arrayLiteral,
+    tuplePattern,
+    tuplePatternLeaf,
 };
 
 static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::expression, "expression" },
     { NodeType::primary, "primary" },
     { NodeType::identifier, "identifier" },
+    { NodeType::typedIdentifier, "typedIdentifier" },
     { NodeType::intLiteral, "intLiteral" },
     { NodeType::floatLiteral, "floatLiteral" },
     { NodeType::stringLiteral, "stringLiteral" },
@@ -55,6 +60,7 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::assignment, "assignment" },
     { NodeType::conjunction, "conjunction" },
     { NodeType::disjunction, "disjunction" },
+    { NodeType::negation, "negation" },
     { NodeType::equality, "equality" },
     { NodeType::inequality, "inequality" },
     { NodeType::lessThan, "lessThan" },
@@ -69,7 +75,10 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::call, "call" },
     { NodeType::callArgsList, "callArgsList" },
     { NodeType::forExpr, "forExpr" },
-    { NodeType::arrayLiteral, "arrayLiteral" }
+    { NodeType::arrayLiteral, "arrayLiteral" },
+    { NodeType::tuplePattern, "tuplePattern" },
+    { NodeType::tuplePatternLeaf, "tuplePatternLeaf" },
+
 };
 
 static const char* getNodeTypeName(NodeType type){
@@ -96,6 +105,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::assignment, { 1, 2, true, false } },
     { NodeType::conjunction, { 3, 4, true, false } },
     { NodeType::disjunction, { 3, 4, true, false } },
+    { NodeType::negation, { 0, 8, false, true } },
     { NodeType::equality, { 5, 6, true, false } },
     { NodeType::inequality, { 5, 6, true, false } },
     { NodeType::lessThan, { 5, 6, true, false } },
@@ -103,6 +113,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::lessEqual, { 5, 6, true, false } },
     { NodeType::greaterEqual, { 5, 6, true, false } },
     { NodeType::memberAccess, { 200, 201, true, false } },
+    { NodeType::call, {150, 1000, true, false } }
 };
 
 static bool isPrimary(NodeType type){
@@ -110,7 +121,8 @@ static bool isPrimary(NodeType type){
     type == NodeType::identifier ||
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
-    type == NodeType::stringLiteral;
+    type == NodeType::stringLiteral ||
+    type == NodeType::callArgsList;
 }
 
 static bool isOperator(NodeType type){
@@ -134,9 +146,6 @@ static bool isPostfixOperator(NodeType type){
 }
 
 static int getLbp(NodeType type){
-    if(isPrimary(type)){
-        return 1000000;
-    }
     if(!operatorInfoLookup.count(type)){
         throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
     }
@@ -144,9 +153,6 @@ static int getLbp(NodeType type){
 }
 
 static int getRbp(NodeType type){
-    if(isPrimary(type)){
-        return 0;
-    }
     if(!operatorInfoLookup.count(type)){
         throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
     }
@@ -154,7 +160,6 @@ static int getRbp(NodeType type){
 }
 
 class AstNode;
-
 
 struct BinaryOperation {
     AstNode *left;
@@ -187,6 +192,11 @@ struct Identifier {
     std::string name;
 };
 
+struct TypedIdentifier {
+    AstNode *name;
+    AstNode *type;
+};
+
 struct FnParamList {
     std::vector<AstNode*> params;
 };
@@ -204,17 +214,32 @@ struct Block {
 struct IfExpr {
     AstNode *condition;
     AstNode *ifBlock;
+    std::vector<AstNode*> elifCondition;
     std::vector<AstNode*> elifBlock;
     AstNode *elseBlock;
+};
+
+struct ForExpr {
+    AstNode *pattern;
+    AstNode *expr;
+    AstNode *block;
 };
 
 struct ArrayLiteral {
     std::vector<AstNode*> elements;
 };
 
-struct Call {
-    AstNode *funcName;
-    AstNode *arguments;
+struct Assignment {
+    AstNode *lhs;
+    AstNode *rhs;
+};
+
+struct TuplePatternLeaf {
+    AstNode *identifier;
+};
+
+struct TuplePattern {
+    std::vector<AstNode*> children;
 };
 
 struct CallArgsList {
@@ -225,6 +250,7 @@ struct AstNode {
     NodeType type;
     std::variant<
         Identifier,
+        TypedIdentifier,
         IntLiteral,
         FloatLiteral,
         StringLiteral,
@@ -235,9 +261,11 @@ struct AstNode {
         FnParamList,
         Block,
         IfExpr,
-        Call,
         CallArgsList,
-        ArrayLiteral
+        ArrayLiteral,
+        Assignment,
+        TuplePattern,
+        TuplePatternLeaf
     > data;
     AstNode(){}
     AstNode(NodeType type)

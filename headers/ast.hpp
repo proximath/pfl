@@ -31,6 +31,10 @@ struct AbstractSyntaxTree {
             }
         } else if(node->type == NodeType::identifier){
             std::cout << " | " << node->as<Identifier>().name << std::endl; 
+        } else if(node->type == NodeType::typedIdentifier){
+            std::cout << std::endl;
+            print(node->as<TypedIdentifier>().name, level + 1); 
+            print(node->as<TypedIdentifier>().type, level + 1); 
         } else if(node->type == NodeType::intLiteral){
             std::cout << " | " << node->as<IntLiteral>().value << std::endl; 
         } else if(node->type == NodeType::floatLiteral){
@@ -56,11 +60,11 @@ struct AbstractSyntaxTree {
             std::cout << std::endl;
             print(node->as<IfExpr>().condition, level + 1);
             print(node->as<IfExpr>().ifBlock, level + 1);
+            for(int i = 0; i < node->as<IfExpr>().elifBlock.size(); i++){
+                print(node->as<IfExpr>().elifCondition[i], level + 1);
+                print(node->as<IfExpr>().elifBlock[i], level + 1);
+            }
             print(node->as<IfExpr>().elseBlock, level + 1);
-        } else if(node->type == NodeType::call){
-            std::cout << std::endl;
-            print(node->as<Call>().funcName, level + 1);
-            print(node->as<Call>().arguments, level + 1);
         } else if(node->type == NodeType::callArgsList){
             std::cout << std::endl;
             for(AstNode *args : node->as<CallArgsList>().args){

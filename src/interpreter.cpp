@@ -90,5 +90,7 @@ void interpreter(const std::string &path){
         ast.print(ast.root);
     } catch(LexerError err){
         std::cout << err.what() << std::endl;
+    } catch(ParserError err){
+        std::cout << err.what() << std::endl;
     }
 }

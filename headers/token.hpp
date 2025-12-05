@@ -64,6 +64,11 @@ enum class TokenType {
     indent,
     dedent,
     eof,
+    notKeyword,
+    andKeyword,
+    orKeyword,
+    inKeyword,
+    isKeyword,
 };
 
 struct Token {
@@ -117,6 +122,11 @@ static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "true", TokenType::trueKeyword },
     { "false", TokenType::falseKeyword },
     { "type", TokenType::typeKeyword },
+    { "not", TokenType::notKeyword },
+    { "and", TokenType::andKeyword },
+    { "or", TokenType::orKeyword },
+    { "in", TokenType::inKeyword },
+    { "is", TokenType::isKeyword },
 };
 
 static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
@@ -174,6 +184,11 @@ static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::indent, "indent" },
     { TokenType::dedent, "dedent" },
     { TokenType::eof, "eof" },
+    { TokenType::notKeyword, "notKeyword" },
+    { TokenType::andKeyword, "andKeyword" },
+    { TokenType::orKeyword, "orKeyword" },
+    { TokenType::inKeyword, "inKeyword" },
+    { TokenType::isKeyword, "isKeyword" },
 };
 
 static std::unordered_map<std::string, TokenType> escapeCharsLookup = {
@@ -203,6 +218,11 @@ static std::unordered_set<TokenType> operatorLookup = {
     TokenType::more,
     TokenType::moreEqual,
     TokenType::dot,
+    TokenType::notKeyword,
+    TokenType::andKeyword,
+    TokenType::orKeyword,
+    TokenType::isKeyword,
+    TokenType::inKeyword,
 };
 
 static const std::string& tokenTypeName(TokenType tt){
