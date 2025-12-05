@@ -1,52 +1,37 @@
 #pragma once
 
-#include "utils.hpp"
-#include "token.hpp"
+#include "../include/utils.hpp"
+#include "../token/token.hpp"
 
 #include <variant>
 
 enum class NodeType {
-    none,
-    expression,
-    primary,
-    identifier,
-    typedIdentifier,
-    intLiteral,
-    floatLiteral,
-    stringLiteral,
-    addition,
-    subtraction,
-    multiplication,
-    division,
-    exponentiation,
-    plusSign,
-    minusSign,
+    // Building blocks
+    expression, block,
+    // Primaries (*not exhaustive)
+    identifier, intLiteral, floatLiteral, stringLiteral,
+    // Binary Arithmetic Operation
+    addition, subtraction, multiplication, division, exponentiation,
+    // Unary Operation
+    plusSign, minusSign,
     assignment,
-    conjunction,
-    disjunction,
-    negation,
-    equality,
-    inequality,
-    lessThan,
-    greaterThan,
-    lessEqual,
-    greaterEqual,
-    function,
-    fnParamList,
-    block,
-    ifExpr,
-    call,
-    callArgsList,
+    // Logical Operation
+    conjunction, disjunction, negation,
+    // Comparisan
+    equality, inequality, lessThan, greaterThan, lessEqual, greaterEqual,
+    // Function
+    function, fnParamList, callArgsList, call,
+    // Statement-like
+    ifExpr, forExpr,
     memberAccess,
-    forExpr,
     arrayLiteral,
     tuplePattern,
     tuplePatternLeaf,
+    typedIdentifier,
 };
 
 static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::expression, "expression" },
-    { NodeType::primary, "primary" },
     { NodeType::identifier, "identifier" },
     { NodeType::typedIdentifier, "typedIdentifier" },
     { NodeType::intLiteral, "intLiteral" },
@@ -79,87 +64,8 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::forExpr, "forExpr" },
     { NodeType::arrayLiteral, "arrayLiteral" },
     { NodeType::tuplePattern, "tuplePattern" },
-    { NodeType::tuplePatternLeaf, "tuplePatternLeaf" },
 
 };
-
-static const char* getNodeTypeName(NodeType type){
-    if(!nodeTypeNameLookup.count(type)){
-        throw SystemError("getNodeTypeName not implemented", __FILE__, __LINE__);
-    }
-    return nodeTypeNameLookup[type];
-}
-
-struct OperatorInfo {
-    int lbp, rbp;
-    bool binary;
-    bool prefix;
-};
-
-static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
-    { NodeType::addition, { 10, 11, true, false } },
-    { NodeType::subtraction, { 10, 11, true, false } },
-    { NodeType::multiplication, { 20, 21, true, false } },
-    { NodeType::division, { 20, 21, true, false } },
-    { NodeType::exponentiation, { 30, 31, true, false } },
-    { NodeType::plusSign, { 100, 101, false, true } },
-    { NodeType::minusSign, { 100, 101, false, true } },
-    { NodeType::assignment, { 1, 2, true, false } },
-    { NodeType::conjunction, { 3, 4, true, false } },
-    { NodeType::disjunction, { 3, 4, true, false } },
-    { NodeType::negation, { 0, 8, false, true } },
-    { NodeType::equality, { 5, 6, true, false } },
-    { NodeType::inequality, { 5, 6, true, false } },
-    { NodeType::lessThan, { 5, 6, true, false } },
-    { NodeType::greaterThan, { 5, 6, true, false } },
-    { NodeType::lessEqual, { 5, 6, true, false } },
-    { NodeType::greaterEqual, { 5, 6, true, false } },
-    { NodeType::memberAccess, { 200, 201, true, false } },
-    { NodeType::call, {150, 1000, true, false } }
-};
-
-static bool isPrimary(NodeType type){
-    return 
-    type == NodeType::identifier ||
-    type == NodeType::intLiteral ||
-    type == NodeType::floatLiteral ||
-    type == NodeType::stringLiteral ||
-    type == NodeType::callArgsList;
-}
-
-static bool isOperator(NodeType type){
-    return operatorInfoLookup.count(type);
-}
-
-static bool isBinaryOperator(NodeType type){
-    return operatorInfoLookup[type].binary;
-}
-
-static bool isUnaryOperator(NodeType type){
-    return !operatorInfoLookup[type].binary;
-}
-
-static bool isPrefixOperator(NodeType type){
-    return operatorInfoLookup[type].prefix;
-}
-
-static bool isPostfixOperator(NodeType type){
-    return !operatorInfoLookup[type].prefix;
-}
-
-static int getLbp(NodeType type){
-    if(!operatorInfoLookup.count(type)){
-        throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
-    }
-    return operatorInfoLookup[type].lbp;
-}
-
-static int getRbp(NodeType type){
-    if(!operatorInfoLookup.count(type)){
-        throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
-    }
-    return operatorInfoLookup[type].rbp;
-}
 
 class AstNode;
 
@@ -236,10 +142,6 @@ struct Assignment {
     AstNode *rhs;
 };
 
-struct TuplePatternLeaf {
-    AstNode *identifier;
-};
-
 struct TuplePattern {
     std::vector<AstNode*> children;
 };
@@ -266,8 +168,7 @@ struct AstNode {
         CallArgsList,
         ArrayLiteral,
         Assignment,
-        TuplePattern,
-        TuplePatternLeaf
+        TuplePattern
     > data;
     AstNode(){}
     AstNode(NodeType type)
@@ -284,6 +185,11 @@ struct AstNode {
     T& as(){
         return std::get<T>(data);
     }
-
 };
 
+static const char* getNodeTypeName(NodeType type){
+    if(!nodeTypeNameLookup.count(type)){
+        throw SystemError("getNodeTypeName not implemented", __FILE__, __LINE__);
+    }
+    return nodeTypeNameLookup[type];
+}

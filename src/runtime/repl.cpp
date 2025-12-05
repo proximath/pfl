@@ -1,6 +1,9 @@
+#include "../include/utils.hpp"
 #include "../include/interpreter.hpp"
 #include "../include/lexer.hpp"
 #include "../include/parser.hpp"
+#include "../token/token.hpp"
+#include "../ast/print.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -52,11 +55,11 @@ void repl(){
             std::vector<Token> tokens = lexer.getTokens();
             std::cout << "[ ";
             for(const Token &token : tokens){
-                std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
+                std::cout << getTokenTypeName(token.type) << "(" << token.text << ") ";
             }
             std::cout << "]" << std::endl;
-            AbstractSyntaxTree ast = parser.parse(tokens);
-            ast.print(ast.root, 0);
+            AstNode* ast = parser.parse(tokens);
+            printAst(ast);
         } catch(LexerError err){
             std::cerr << err.what() << std::endl;
             return;

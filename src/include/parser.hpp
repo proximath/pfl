@@ -1,8 +1,8 @@
 #pragma once
 
 #include "utils.hpp"
-#include "token.hpp"
-#include "ast.hpp"
+#include "../token/token.hpp"
+#include "../ast/astnode.hpp"
 
 class Parser {
 private:
@@ -25,7 +25,7 @@ private:
     void emitError(const std::string&);
     void popOperatorStack(std::vector<AstNode*>&, AstNode*&, AstNode*&);
 public:
-    AbstractSyntaxTree parse(std::vector<Token>);
+    AstNode* parse(std::vector<Token>);
 };
 
 NodeType tokenToBinaryOperator(TokenType);

@@ -1,6 +1,7 @@
 #include "../include/interpreter.hpp"
 #include "../include/lexer.hpp"
 #include "../include/parser.hpp"
+#include "../ast/print.hpp"
 
 void script(const std::string &path){
     std::ifstream is(path);
@@ -13,12 +14,12 @@ void script(const std::string &path){
         std::vector<Token> tokens = lexer.getTokens();
         std::cout << "[ ";
         for(const Token &token : tokens){
-            std::cout << tokenTypeName(token.type) << "(" << token.text << ") ";
+            std::cout << getTokenTypeName(token.type) << "(" << token.text << ") ";
         }
         std::cout << "]" << std::endl;
         Parser parser;
-        AbstractSyntaxTree ast = parser.parse(tokens);
-        ast.print(ast.root);
+        AstNode* ast = parser.parse(tokens);
+        printAst(ast);
     } catch(LexerError err){
         std::cout << err.what() << std::endl;
     } catch(ParserError err){

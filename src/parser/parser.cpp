@@ -1,5 +1,7 @@
 #include "../include/parser.hpp"
 #include "parser-utils.hpp"
+#include "../token/operator.hpp"
+#include "../ast/operator.hpp"
 
 #include <algorithm>
 
@@ -30,7 +32,7 @@ Token* Parser::discardToken(TokenType type){
 
 Token& Parser::expectToken(TokenType type){
 	if(getCurToken().type != type){
-		emitError(std::string("Expected token " + tokenTypeName(type)));
+		emitError(std::string("Expected token " + getTokenTypeName(type)));
 	}
 	return tokens[tokenInd++];
 }
@@ -122,7 +124,7 @@ AstNode* Parser::handleCallArgsList(){
 		AstNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
 		//std::cout << "PB " << getNodeTypeName(arg->type) << std::endl;
 		returned->as<CallArgsList>().args.push_back(arg);
-		//std::cout << tokenTypeName(getPrevToken().type) << std::endl;
+		//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
 	}
 	return returned;
 }
@@ -182,7 +184,7 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 	// }
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		std::cout << "Reading token " << tokenTypeName(curToken.type) << std::endl;
+		std::cout << "Reading token " << getTokenTypeName(curToken.type) << std::endl;
 		// for(int i = 0; i < operatorNodes.size(); i++){
 		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
 		// }
@@ -283,7 +285,7 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 		return nullptr;
 	}
 }
-AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
+AstNode* Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
 	AstNode *root = new AstNode(NodeType::block, Block{});
 	while(tokenInd < tokens.size()){
@@ -291,5 +293,5 @@ AbstractSyntaxTree Parser::parse(std::vector<Token> tokenStream){
 		root->as<Block>().expressions.push_back(exp);
 	}
 	//std::cout << "Finished parsing" << std::endl;
-	return AbstractSyntaxTree(root);
+	return root;
 }
