@@ -1,5 +1,5 @@
-#include "../headers/utils.hpp"
-#include "../headers/lexer.hpp"
+#include "../include/utils.hpp"
+#include "../include/lexer.hpp"
 
 Lexer::Lexer(std::istream *stream)
   : stream(stream)

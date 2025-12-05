@@ -1,10 +1,8 @@
 #pragma once
 
-#include "../headers/utils.hpp"
-#include "../headers/token.hpp"
+#include "utils.hpp"
+#include "token.hpp"
 #include "ast.hpp"
-
-#include <stack>
 
 class Parser {
 private:

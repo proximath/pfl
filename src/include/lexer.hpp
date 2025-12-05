@@ -9,7 +9,6 @@
 #include <fstream>
 
 enum class State {
-    placeholder, // Don't use
     normal,
     word,
     space,

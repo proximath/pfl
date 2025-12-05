@@ -1,5 +1,7 @@
-#include "../headers/utils.hpp"
-#include "../headers/token.hpp"
+#pragma once
+
+#include "utils.hpp"
+#include "token.hpp"
 
 #include <variant>
 

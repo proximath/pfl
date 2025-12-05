@@ -1,6 +1,4 @@
-#include "../headers/lexer.hpp"
-#include "../headers/parser.hpp"
-#include "../headers/interpreter.hpp"
+#include "include/interpreter.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -34,6 +32,6 @@ int main(int argc, char *argv[]){
     if(!hasSrcFile || forceRepl){
         repl();
     } else {
-        interpreter(filePath);
+        script(filePath);
     }
 }

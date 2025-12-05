@@ -3,4 +3,4 @@
 #include <string>
 
 void repl();
-void interpreter(const std::string&);
+void script(const std::string&);
