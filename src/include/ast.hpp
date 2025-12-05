@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../headers/utils.hpp"
-#include "../headers/token.hpp"
-#include "../headers/node.hpp"
+#include "utils.hpp"
+#include "token.hpp"
+#include "astnode.hpp"
 
 #include <iostream>
 
