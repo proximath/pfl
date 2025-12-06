@@ -16,7 +16,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::exponentiation, { 30, 31, true, false } },
     { NodeType::plusSign, { 100, 101, false, true } },
     { NodeType::minusSign, { 100, 101, false, true } },
-    { NodeType::assignment, { 1, 2, true, false } },
+    //{ NodeType::assignment, { 1, 2, true, false } },
     { NodeType::conjunction, { 3, 4, true, false } },
     { NodeType::disjunction, { 3, 4, true, false } },
     { NodeType::negation, { 0, 8, false, true } },
@@ -27,6 +27,7 @@ static std::unordered_map<NodeType, OperatorInfo> operatorInfoLookup = {
     { NodeType::lessEqual, { 5, 6, true, false } },
     { NodeType::greaterEqual, { 5, 6, true, false } },
     { NodeType::memberAccess, { 200, 201, true, false } },
+    { NodeType::arrayAccess, { 150, 1000, true, false } },
     { NodeType::call, {150, 1000, true, false } }
 };
 

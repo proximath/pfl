@@ -24,9 +24,9 @@ enum class NodeType {
     // Statement-like
     ifExpr, forExpr,
     memberAccess,
-    arrayLiteral,
+    arrayLiteral, arrayAccess, arraySubscript,
     tuplePattern,
-    tuplePatternLeaf,
+    tupleExpression,
     typedIdentifier,
 };
 
@@ -63,7 +63,10 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::callArgsList, "callArgsList" },
     { NodeType::forExpr, "forExpr" },
     { NodeType::arrayLiteral, "arrayLiteral" },
+    { NodeType::arrayAccess, "arrayAccess" },
+    { NodeType::arraySubscript, "arraySubscript" },
     { NodeType::tuplePattern, "tuplePattern" },
+    { NodeType::tupleExpression, "tupleExpression" },
 
 };
 
@@ -101,8 +104,8 @@ struct Identifier {
 };
 
 struct TypedIdentifier {
-    AstNode *name;
-    AstNode *type;
+    std::string name;
+    std::string type; // Be careful if you decided to add Type<T> later
 };
 
 struct FnParamList {
@@ -146,8 +149,16 @@ struct TuplePattern {
     std::vector<AstNode*> children;
 };
 
+struct TupleExpression {
+    std::vector<AstNode*> children;
+};
+
 struct CallArgsList {
     std::vector<AstNode*> args;
+};
+
+struct ArraySubscript {
+    AstNode *index;
 };
 
 struct AstNode {
@@ -168,7 +179,9 @@ struct AstNode {
         CallArgsList,
         ArrayLiteral,
         Assignment,
-        TuplePattern
+        TuplePattern,
+        TupleExpression,
+        ArraySubscript
     > data;
     AstNode(){}
     AstNode(NodeType type)

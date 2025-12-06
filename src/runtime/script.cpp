@@ -20,6 +20,8 @@ void script(const std::string &path){
         Parser parser;
         AstNode* ast = parser.parse(tokens);
         printAst(ast);
+    } catch(SystemError err){
+        std::cout << err.what() << std::endl;
     } catch(LexerError err){
         std::cout << err.what() << std::endl;
     } catch(ParserError err){
