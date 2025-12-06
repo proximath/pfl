@@ -3,7 +3,7 @@
 #include "../token/token.hpp"
 #include "../ast/astnode.hpp"
 
-NodeType tokenToBinaryOperator(TokenType type){
+static NodeType tokenToBinaryOperator(TokenType type){
 	switch(type){
 	case TokenType::plus:
 		return NodeType::addition;
@@ -41,12 +41,14 @@ NodeType tokenToBinaryOperator(TokenType type){
 		return NodeType::disjunction;
 	case TokenType::parenStart:
 		return NodeType::call;
+	case TokenType::squareStart:
+		return NodeType::arrayAccess;
 	default:
 		throw SystemError("tokenToBinaryOperator not a binary operator", __FILE_NAME__, __LINE__);
 	}
 }
 
-NodeType tokenToUnaryOperation(TokenType type){
+static NodeType tokenToUnaryOperation(TokenType type){
 	switch(type){
 	case TokenType::plus:
 		return NodeType::plusSign;
@@ -59,7 +61,7 @@ NodeType tokenToUnaryOperation(TokenType type){
 	}
 }
 
-AstNode* tokenToPrimary(Token &token){
+static AstNode* tokenToPrimary(Token &token){
 	switch(token.type){
 	case TokenType::identifier:
 		return new AstNode(NodeType::identifier, Identifier{token.text});
@@ -114,5 +116,7 @@ static bool isPrimary(NodeType type){
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
     type == NodeType::stringLiteral ||
-    type == NodeType::callArgsList;
+    type == NodeType::callArgsList ||
+    type == NodeType::arraySubscript;
 }
+

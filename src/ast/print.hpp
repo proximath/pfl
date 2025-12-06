@@ -27,9 +27,9 @@ static void printAst(AstNode *node, int level = 0){
         std::cout << " | " << node->as<Identifier>().name << std::endl; 
     break;
     case NodeType::typedIdentifier:
-        std::cout << std::endl;
-        printAst(node->as<TypedIdentifier>().name, level + 1); 
-        printAst(node->as<TypedIdentifier>().type, level + 1); 
+        std::cout << " | ";
+        std::cout << node->as<TypedIdentifier>().name << " | "; 
+        std::cout << node->as<TypedIdentifier>().type << std::endl; 
     break;
     case NodeType::intLiteral:
         std::cout << " | " << node->as<IntLiteral>().value << std::endl; 
@@ -80,9 +80,30 @@ static void printAst(AstNode *node, int level = 0){
             printAst(elem, level + 1);
         }
     break;
+    case NodeType::arraySubscript:
+        std::cout << std::endl;
+        printAst(node->as<ArraySubscript>().index, level + 1);
+    break;
+    case NodeType::assignment:
+        std::cout << std::endl;
+        printAst(node->as<Assignment>().lhs, level + 1);
+        printAst(node->as<Assignment>().rhs, level + 1);
+    break;
+    case NodeType::tuplePattern:
+        std::cout << std::endl;
+        for(AstNode *child : node->as<TuplePattern>().children){
+            printAst(child, level + 1);
+        }
+    break;
+    case NodeType::tupleExpression:
+        std::cout << std::endl;
+        for(AstNode *child : node->as<TupleExpression>().children){
+            printAst(child, level + 1);
+        }
+    break;
     default:
         throw SystemError(std::string("printAst node type ") +
-            getNodeTypeName(node->type) +  "is unimplemented", 
+            getNodeTypeName(node->type) +  " is unimplemented", 
             __FILE_NAME__, __LINE__);
     }
 }
