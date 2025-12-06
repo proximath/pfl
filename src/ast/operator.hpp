@@ -53,14 +53,18 @@ static bool isPostfixOperator(NodeType type){
 
 static int getLbp(NodeType type){
     if(!operatorInfoLookup.count(type)){
-        throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
+        throw SystemError(
+            std::string("Binding power of ") + getNodeTypeName(type) + " not found", 
+            __FILE_NAME__, __LINE__);
     }
     return operatorInfoLookup[type].lbp;
 }
 
 static int getRbp(NodeType type){
     if(!operatorInfoLookup.count(type)){
-        throw SystemError("Binding power not found", __FILE_NAME__, __LINE__);
+        throw SystemError(
+            std::string("Binding power of ") + getNodeTypeName(type) + " not found", 
+            __FILE_NAME__, __LINE__);
     }
     return operatorInfoLookup[type].rbp;
 }

@@ -54,10 +54,15 @@ AstNode* Parser::handleFnParamList(){
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
 		}
-		Token &name = expectToken(TokenType::identifier);
-		returned->as<FnParamList>().params.push_back(
-			new AstNode(NodeType::identifier, Identifier{name.text})
-		);
+		AstNode *ti;
+		if(ti = tryTypedIdentifier()){
+			returned->as<FnParamList>().params.push_back(ti);
+		} else {
+			Token &name = expectToken(TokenType::identifier);
+			returned->as<FnParamList>().params.push_back(
+				new AstNode(NodeType::identifier, Identifier{name.text})
+			);
+		}
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
 		}
@@ -181,10 +186,10 @@ AstNode* Parser::tryTupleExpression(TokenType delimeter){
 	addCheckpoint();
 	AstNode *returned = new AstNode(NodeType::tupleExpression, TupleExpression{});
 	while(tokenInd < tokens.size()){
-		//std::cout << "READ " << tokenInd << " "  << getTokenTypeName(getCurToken().type) << std::endl;
+		std::cout << "READ " << tokenInd << " "  << getTokenTypeName(getCurToken().type) << std::endl;
 		AstNode *child;
 		if(getCurToken().type == delimeter){
-			//std::cout << "STOP" << std::endl;
+			std::cout << "STOP" << std::endl;
 			tokenInd++;
 			break;
 		}  
@@ -200,6 +205,7 @@ AstNode* Parser::tryTupleExpression(TokenType delimeter){
 		} else {
 			child = handleExpression({ delimeter, TokenType::comma, TokenType::newline });
 			returned->as<TupleExpression>().children.push_back(child);
+			if(getPrevToken().type == delimeter) break;
 		}
 		discardToken(TokenType::comma);
 	}

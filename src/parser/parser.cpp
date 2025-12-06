@@ -81,6 +81,11 @@ AstNode* Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
 	AstNode *root = new AstNode(NodeType::block, Block{});
 	while(tokenInd < tokens.size()){
+		AstNode *assignment = tryAssignment();
+		if(assignment){
+			root->as<Block>().expressions.push_back(assignment);
+			continue;
+		}
 		AstNode *exp = handleExpression({ TokenType::newline });	
 		root->as<Block>().expressions.push_back(exp);
 	}
