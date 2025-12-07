@@ -9,7 +9,7 @@ enum class NodeType {
     // Building blocks
     expression, block,
     // Primaries (*not exhaustive)
-    identifier, intLiteral, floatLiteral, stringLiteral,
+    identifier, intLiteral, floatLiteral, stringLiteral, formatString, stringTemplate,
     // Binary Arithmetic Operation
     addition, subtraction, multiplication, division, exponentiation,
     // Unary Operation
@@ -37,6 +37,8 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::intLiteral, "intLiteral" },
     { NodeType::floatLiteral, "floatLiteral" },
     { NodeType::stringLiteral, "stringLiteral" },
+    { NodeType::stringTemplate, "stringTemplate" },
+    { NodeType::formatString, "formatString" },
     { NodeType::addition, "addition" },
     { NodeType::subtraction, "subtraction" },
     { NodeType::multiplication, "multiplication" },
@@ -93,6 +95,15 @@ struct IntLiteral {
 
 struct StringLiteral {
     std::string value;
+};
+
+struct StringTemplate {
+    AstNode *value;
+    AstNode *format;
+};
+
+struct FormatString{
+    std::vector<AstNode*> children;
 };
 
 struct FloatLiteral {
@@ -169,6 +180,8 @@ struct AstNode {
         IntLiteral,
         FloatLiteral,
         StringLiteral,
+        FormatString,
+        StringTemplate,
         BinaryOperation,
         UnaryOperation,
         VariableDeclaration,

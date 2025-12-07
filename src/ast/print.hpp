@@ -40,6 +40,17 @@ static void printAst(AstNode *node, int level = 0){
     case NodeType::stringLiteral:
         std::cout << " | " << node->as<StringLiteral>().value << std::endl;
     break;
+    case NodeType::formatString:
+        std::cout << std::endl;
+        for(AstNode *child : node->as<FormatString>().children){
+            printAst(child, level + 1);
+        }
+    break;
+    case NodeType::stringTemplate:
+        std::cout << std::endl;
+        printAst(node->as<StringTemplate>().value, level + 1);
+        printAst(node->as<StringTemplate>().format, level + 1);
+    break;
     case NodeType::fnParamList:
         std::cout << std::endl;
         for(AstNode *param : node->as<FnParamList>().params){
