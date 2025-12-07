@@ -71,6 +71,10 @@ static AstNode* tokenToPrimary(Token &token){
 		return new AstNode(NodeType::floatLiteral, FloatLiteral{token.text});
 	case TokenType::string:
 		return new AstNode(NodeType::stringLiteral, StringLiteral{token.text});
+	case TokenType::formatString:
+		return new AstNode(NodeType::formatString, FormatString{
+			{new AstNode(NodeType::stringLiteral, StringLiteral{token.text})}
+		});
 	default:
 		throw SystemError("tokenToPrimary not a primary", __FILE_NAME__, __LINE__);
 	}
@@ -81,7 +85,8 @@ static bool isPrimary(const TokenType type){
     type == TokenType::intLiteral || 
     type == TokenType::floatLiteral || 
     type == TokenType::string ||
-    type == TokenType::identifier;
+    type == TokenType::identifier ||
+	type == TokenType::formatString;
 }
 
 static bool isPrimary(const Token &token){
@@ -116,6 +121,7 @@ static bool isPrimary(NodeType type){
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
     type == NodeType::stringLiteral ||
+	type == NodeType::formatString ||
     type == NodeType::callArgsList ||
     type == NodeType::arraySubscript;
 }

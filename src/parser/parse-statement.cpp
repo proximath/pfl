@@ -2,6 +2,7 @@
 #include "parser-utils.hpp"
 #include "../token/operator.hpp"
 #include "../ast/operator.hpp"
+#include "../ast/print.hpp"
 
 AstNode* Parser::handleBlock(){
 	AstNode *returned = new AstNode(NodeType::block, Block{});
@@ -18,6 +19,49 @@ AstNode* Parser::handleBlock(){
 			break;
 		}
 	}
+	return returned;
+}
+
+AstNode* Parser::handleStringTemplate(){
+	AstNode *returned = new AstNode(NodeType::stringTemplate, StringTemplate{});
+	AstNode *value = handleExpression({ TokenType::curlyEnd, TokenType::colon });
+	returned->as<StringTemplate>().value = value;
+	//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
+	if(getPrevToken().type == TokenType::colon){
+		//std::cout << "YES" << std::endl;
+		AstNode *format = handleExpression({ TokenType::curlyEnd });
+		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
+
+		returned->as<StringTemplate>().format = format;
+	}
+	//printAst(returned);
+	return returned;
+}
+
+AstNode* Parser::handleFormatString(){
+	expectToken(TokenType::doubleQuote);
+	AstNode *returned = new AstNode(NodeType::formatString, FormatString{});
+	bool odd = true;
+	while(tokenInd < tokens.size()){
+		//std::cout << "READ " << getTokenTypeName(getCurToken().type) << std::endl;
+		if(discardToken(TokenType::doubleQuote)) {
+			break;
+		}
+		if(odd){
+			AstNode *child = new AstNode(
+				NodeType::stringLiteral, 
+				StringLiteral{expectToken(TokenType::formatString).text}
+			);
+			returned->as<FormatString>().children.push_back(child);
+		} else {
+			expectToken(TokenType::curlyStart);
+			AstNode *templ = handleStringTemplate();
+			returned->as<FormatString>().children.push_back(templ);
+		}
+		odd = !odd;
+	}
+	//std::cout << "RET" << std::endl;
+	//printAst(returned);
 	return returned;
 }
 
@@ -49,7 +93,7 @@ AstNode* Parser::handleIf(){
 
 AstNode* Parser::handleFnParamList(){
 	AstNode *returned = new AstNode(NodeType::fnParamList, FnParamList{});
-	expectToken(TokenType::parenStart);
+	bool usesParen = discardToken(TokenType::parenStart);
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
@@ -68,22 +112,31 @@ AstNode* Parser::handleFnParamList(){
 		}
 		expectToken(TokenType::comma);
 	}
-	expectToken(TokenType::parenEnd);
+	if(usesParen){
+		expectToken(TokenType::parenEnd);
+	}
 	return returned;
 }
 
 AstNode* Parser::handleFn(){
 	AstNode *returned = new AstNode(NodeType::function, Function{});
 	expectToken(TokenType::fnKeyword);
-	Token& name = expectToken(TokenType::identifier);
-	returned->as<Function>().name = new AstNode(NodeType::identifier, Identifier{name.text});
+	Token* name = discardToken(TokenType::identifier);
+	if(name){
+		returned->as<Function>().name = new AstNode(NodeType::identifier, Identifier{name->text});
+	}
 	AstNode *paramList = handleFnParamList();
 	returned->as<Function>().paramList = paramList;
 	expectToken(TokenType::colon);
 	discardToken(TokenType::newline);
-	discardToken(TokenType::indent);
-	AstNode *block = handleBlock();
-	returned->as<Function>().block = block;
+	if(discardToken(TokenType::indent)){
+		AstNode *block = handleBlock();
+		returned->as<Function>().block = block;
+	} else {
+		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
+		AstNode *block = handleExpression({ TokenType::newline });
+		returned->as<Function>().block = block;
+	}
 	return returned;
 }
 
@@ -186,10 +239,10 @@ AstNode* Parser::tryTupleExpression(TokenType delimeter){
 	addCheckpoint();
 	AstNode *returned = new AstNode(NodeType::tupleExpression, TupleExpression{});
 	while(tokenInd < tokens.size()){
-		std::cout << "READ " << tokenInd << " "  << getTokenTypeName(getCurToken().type) << std::endl;
+		//std::cout << "READ " << tokenInd << " "  << getTokenTypeName(getCurToken().type) << std::endl;
 		AstNode *child;
 		if(getCurToken().type == delimeter){
-			std::cout << "STOP" << std::endl;
+			//std::cout << "STOP" << std::endl;
 			tokenInd++;
 			break;
 		}  

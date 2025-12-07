@@ -23,6 +23,8 @@ private:
     AstNode* handleCallArgsList();
     AstNode* handleArrayLiteral();
     AstNode* handleArraySubscript();
+    AstNode* handleStringTemplate();
+    AstNode* handleFormatString();
     AstNode* handleExpression(std::vector<TokenType>);
     AstNode* tryTuplePattern(TokenType);
     AstNode* tryTupleExpression(TokenType);

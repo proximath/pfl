@@ -17,6 +17,7 @@ enum class State {
     comment,
     multiComment,
     string,
+    formatString,
     leadingSpace,
     newline,
     escape,
@@ -32,6 +33,7 @@ static std::unordered_map<State, const char*> stateNameLookup = {
     { State::symbol, "symbol" },
     { State::escape, "escape" },
     { State::string, "string" },
+    { State::formatString, "formatString" },
     { State::newline, "newline" },
 };
 
@@ -49,6 +51,8 @@ private:
     int indentLevel = 0;
     int prevIndentLevel = 0;
     int indentSpace = -1;
+    int stringTemplateLevel = 0;
+    int formatStringLevel = 0;
     bool eof = false;
     std::istream *stream;
     std::string line;

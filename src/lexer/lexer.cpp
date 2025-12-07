@@ -70,33 +70,24 @@ TokenType Lexer::getTokenType(){
     case State::symbol:
         return symbolToTokenType(prefix);
     case State::string:
-        if(prefix.back() != '\"'){
-            throw LexerError("Ill formed string litteral (missing end quote)", __LINE__, prefixColStart);
+        if(prefix.back() != '\''){
+            throw LexerError("Ill formed string literal (missing end quote)", __LINE__, prefixColStart);
         }
         return TokenType::string;
+    case State::formatString:
+        return TokenType::formatString;
     case State::escape:
         return escapeToTokenType(prefix);
     case State::newline:
         return TokenType::newline;
     case State::leadingSpace:
-        throw SystemError("Dont use this case", __FILE_NAME__, __LINE__);
-        if(indentSpace % indentSpace){
-            emitError("Inconsistent indent spacing");
-        }
-        int tmp = indentLevel;
-        if(indentLevel > prevIndentLevel){
-            while(tmp){
-
-            }
-        }
-        //std::cout << indentLevel << " " << prevIndentLevel << " " << indentSpace << std::endl;
-        //prefix = std::move(std::to_string((indentLevel - prevIndentLevel) / indentSpace));
-        return TokenType::indent;
+        throw SystemError("Don't use this case", __FILE_NAME__, __LINE__);
     }
     throw SystemError("Lexer::getTokenType, not implemented state", __FILE_NAME__, __LINE__);
 }
 
 Token Lexer::createNewToken(){
+    //std::cout << "CREATING " << stateName(curState) << " " << prefix << std::endl;
     TokenType type = getTokenType();
     Token returned = Token{ lineNum, colNum, prefix, type }; 
     prefix = "";
@@ -148,12 +139,21 @@ std::vector<Token> Lexer::getTokens(){
                 curState = State::word;
             } else if(isdigit(c)){
                 curState = State::number;
-            } else if(c == '\"'){
+            } else if(c == '\''){
                 curState = State::string;
             } else if(c == '#'){
                 hashtagCount = 1;
                 hashtagUninterrupted = true;
                 curState = State::comment;
+            } else if(c == '}'){
+                if(stringTemplateLevel == 0){
+                    emitError("Syntax error, encountered '}'");
+                }
+                consumeChar();
+                curState = State::symbol;
+                tokens.push_back(createNewToken());
+                stringTemplateLevel--;
+                curState = State::formatString;
             } else if(isSymbol(c)){
                 curState = State::symbol;
             } else if(c == '\n'){
@@ -195,6 +195,12 @@ std::vector<Token> Lexer::getTokens(){
             break;
         case State::symbol:
             c = readChar();
+            if(c == '\"'){
+                consumeChar();
+                tokens.push_back(createNewToken());
+                curState = State::formatString;
+                break;
+            }
             while(isSymbol(prefix + c)){
                 c = consumeChar();
             }
@@ -203,10 +209,7 @@ std::vector<Token> Lexer::getTokens(){
             break;
         case State::string:
             c = consumeChar();
-            while(c != '\"'){
-                if(c == '\n'){
-                    emitError("Missing string delimeter", colNum);
-                }
+            while(c != '\''){
                 if(c == '\\'){
                     throw SystemError("State::token inimplemented feature", __FILE_NAME__, __LINE__);
                     createNewToken();
@@ -216,6 +219,33 @@ std::vector<Token> Lexer::getTokens(){
             consumeChar();
             tokens.push_back(createNewToken());
             curState = State::normal;
+            break;
+        case State::formatString:
+            formatStringLevel++;
+            while(true){
+                c = readChar();
+                //std::cout << "READING " << c << " " << prefix << std::endl;
+                if(c == '{'){
+                    tokens.push_back(createNewToken());
+                    stringTemplateLevel++;
+                    curState = State::symbol;
+                    consumeChar();
+                    tokens.push_back(createNewToken());
+                    curState = State::normal;
+                    break;
+                } else if(c == '\"'){
+                    if(prefix.length() > 0){
+                        tokens.push_back(createNewToken());
+                    }
+                    consumeChar();
+                    curState = State::symbol;
+                    tokens.push_back(createNewToken());
+                    formatStringLevel--;
+                    curState = State::normal;
+                    break;
+                }
+                consumeChar();
+            }
             break;
         case State::space:
             while(isspace(c) && c != '\n'){

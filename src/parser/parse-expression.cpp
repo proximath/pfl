@@ -36,7 +36,7 @@ void Parser::popOperatorStack(std::vector<AstNode*> &operatorNodes, AstNode *&la
 }
 
 AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
-	std::cout << "EXP" << std::endl;
+	//std::cout << "EXP" << std::endl;
 	AstNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
@@ -48,7 +48,7 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 	// }
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		std::cout << "Reading token " << getTokenTypeName(curToken.type) << std::endl;
+		//std::cout << "Reading token " << getTokenTypeName(curToken.type) << std::endl;
 		// for(int i = 0; i < operatorNodes.size(); i++){
 		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
 		// }
@@ -123,6 +123,12 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 				tokenInd++;
 				lastPrimary = handleExpression({ TokenType::parenEnd });
 			}
+			prevOperator = false;
+			prevUnary = false;
+			continue;
+		} else if(curToken.type == TokenType::doubleQuote){
+			AstNode *format = handleFormatString();
+			lastPrimary = format;
 			prevOperator = false;
 			prevUnary = false;
 			continue;
