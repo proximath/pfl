@@ -1,4 +1,4 @@
-#include "include/interpreter.hpp"
+#include "runtime/interpreter.hpp"
 
 #include <cstring>
 #include <iostream>

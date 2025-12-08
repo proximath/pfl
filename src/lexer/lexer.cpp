@@ -1,5 +1,5 @@
 #include "../include/utils.hpp"
-#include "../include/lexer.hpp"
+#include "lexer.hpp"
 #include "lexer-utils.hpp"
 #include "../token/symbol.hpp"
 #include "../token/keyword.hpp"

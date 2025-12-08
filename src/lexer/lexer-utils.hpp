@@ -1,4 +1,4 @@
-#include "../include/lexer.hpp"
+#include "../lexer/lexer.hpp"
 
 static std::string_view stateName(State state){
     if(!stateNameLookup.count(state)){

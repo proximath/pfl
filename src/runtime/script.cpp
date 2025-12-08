@@ -1,6 +1,6 @@
-#include "../include/interpreter.hpp"
-#include "../include/lexer.hpp"
-#include "../include/parser.hpp"
+#include "interpreter.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
 #include "../ast/print.hpp"
 
 void script(const std::string &path){

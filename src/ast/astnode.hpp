@@ -73,10 +73,12 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
 };
 
 class AstNode;
+class Type;
 
 struct BinaryOperation {
     AstNode *left;
     AstNode *right;
+    Type *type;
 };
 
 struct UnaryOperation {
@@ -91,6 +93,7 @@ struct VariableDeclaration {
 
 struct IntLiteral {
     std::string value;
+    int precomputed;
 };
 
 struct StringLiteral {
@@ -108,6 +111,7 @@ struct FormatString{
 
 struct FloatLiteral {
     std::string value;
+    double precomputed;
 };
 
 struct Identifier {

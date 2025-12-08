@@ -80,6 +80,7 @@ static AstNode* tokenToPrimary(Token &token){
 	}
 }
 
+// Note: There's a node version as well
 static bool isPrimary(const TokenType type){
     return 
     type == TokenType::intLiteral || 
@@ -115,6 +116,7 @@ static TokenType getMatchingBrace(const TokenType braceType){
     }
 }
 
+// Note: there's a token version as well
 static bool isPrimary(NodeType type){
     return 
     type == NodeType::identifier ||

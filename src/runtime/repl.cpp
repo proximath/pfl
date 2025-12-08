@@ -1,7 +1,7 @@
 #include "../include/utils.hpp"
-#include "../include/interpreter.hpp"
-#include "../include/lexer.hpp"
-#include "../include/parser.hpp"
+#include "interpreter.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
 #include "../token/token.hpp"
 #include "../ast/print.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.hpp"
+#include "../include/utils.hpp"
 #include "../token/token.hpp"
 #include "../ast/astnode.hpp"
 
