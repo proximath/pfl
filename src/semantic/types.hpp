@@ -9,4 +9,11 @@ struct Type {
     bool isPrimitive;
     int index;
     std::unordered_map<std::string, Type*> attributes;
+    std::vector<Type*> genericParams;
 };
+
+/*
+[int] => list[int]
+(int, int) => tuple[int, int]
+int? => maybe[int]
+*/

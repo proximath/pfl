@@ -69,6 +69,10 @@ static AstNode* tokenToPrimary(Token &token){
 		return new AstNode(NodeType::intLiteral, IntLiteral{token.text});
 	case TokenType::floatLiteral:
 		return new AstNode(NodeType::floatLiteral, FloatLiteral{token.text});
+	case TokenType::trueKeyword:
+		return new AstNode(NodeType::trueLiteral, TrueLiteral{});
+	case TokenType::falseKeyword:
+		return new AstNode(NodeType::falseLiteral, FalseLiteral{});
 	case TokenType::string:
 		return new AstNode(NodeType::stringLiteral, StringLiteral{token.text});
 	case TokenType::formatString:
@@ -85,6 +89,8 @@ static bool isPrimary(const TokenType type){
     return 
     type == TokenType::intLiteral || 
     type == TokenType::floatLiteral || 
+    type == TokenType::trueKeyword || 
+    type == TokenType::falseKeyword || 
     type == TokenType::string ||
     type == TokenType::identifier ||
 	type == TokenType::formatString;
@@ -123,8 +129,11 @@ static bool isPrimary(NodeType type){
     type == NodeType::intLiteral ||
     type == NodeType::floatLiteral ||
     type == NodeType::stringLiteral ||
+    type == NodeType::trueLiteral ||
+    type == NodeType::falseLiteral ||
 	type == NodeType::formatString ||
     type == NodeType::callArgsList ||
+    type == NodeType::arrayLiteral ||
     type == NodeType::arraySubscript;
 }
 

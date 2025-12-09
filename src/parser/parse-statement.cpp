@@ -118,15 +118,29 @@ AstNode* Parser::handleFnParamList(){
 	return returned;
 }
 
+AstNode* Parser::handleTypeSyntax(){
+	AstNode *base = createNode(NodeType::identifier);
+	base->as<Identifier>().name = expectToken(TokenType::identifier).text;
+	AstNode *returned = new AstNode(
+		NodeType::type, 
+		TypeNode{base}
+	);
+	return returned;
+}
+
 AstNode* Parser::handleFn(){
 	AstNode *returned = new AstNode(NodeType::function, Function{});
 	expectToken(TokenType::fnKeyword);
-	Token* name = discardToken(TokenType::identifier);
-	if(name){
-		returned->as<Function>().name = new AstNode(NodeType::identifier, Identifier{name->text});
+	if(getCurToken().type == TokenType::identifier){
+		returned->as<Function>().name = discardToken(TokenType::identifier)->text;
+	} else {
+		returned->as<Function>().name = "<unnamed>";
 	}
 	AstNode *paramList = handleFnParamList();
 	returned->as<Function>().paramList = paramList;
+	if(discardToken(TokenType::arrow)){
+		returned->as<Function>().returnType = handleTypeSyntax();
+	}
 	expectToken(TokenType::colon);
 	discardToken(TokenType::newline);
 	if(discardToken(TokenType::indent)){
@@ -164,7 +178,7 @@ AstNode* Parser::tryTypedIdentifier(){
 	addCheckpoint();
 	AstNode *returned = new AstNode(NodeType::typedIdentifier, TypedIdentifier{});
 
-	//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
+	std::cout << getTokenTypeName(getCurToken().type) << std::endl;
 	if(getCurToken().type == TokenType::identifier){
 		//std::cout << "YES" << std::endl;
 		returned->as<TypedIdentifier>().name = getCurToken().text;
@@ -264,4 +278,36 @@ AstNode* Parser::tryTupleExpression(TokenType delimeter){
 	}
 	commitCheckpoint();
 	return returned;
+}
+
+AstNode* Parser::handleStruct(){
+	//std::cout << "Y" << std::endl;
+	AstNode *returned = createNode(NodeType::structure);
+	expectToken(TokenType::structKeyword);
+	returned->as<Structure>().name = expectToken(TokenType::identifier).text;;
+	expectToken(TokenType::colon);
+	expectToken(TokenType::newline);
+	expectToken(TokenType::indent);
+	while(tokenInd < tokens.size()){
+		AstNode *field;
+		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
+		if(field = tryTypedIdentifier()){
+			returned->as<Structure>().fields.push_back(field);
+			discardToken(TokenType::newline);
+			continue;
+		}
+		if(discardToken(TokenType::dedent)){
+			break;
+		}
+		throw SystemError("Methods not implemented", __FILE_NAME__, __LINE__);
+	}
+	return returned;
+}
+
+AstNode* Parser::handleEnum(){
+
+}
+
+AstNode* Parser::handleMatch(){
+
 }

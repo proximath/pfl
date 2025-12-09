@@ -31,6 +31,7 @@ static std::unordered_map<std::string, TokenType> symbolLookup = {
     { "}",  TokenType::curlyEnd },
     { "[",  TokenType::squareStart },
     { "]",  TokenType::squareEnd },
+    { "->",  TokenType::arrow },
     { "\'", TokenType::quote },
     { "\"", TokenType::doubleQuote },
     { "`",  TokenType::backTick }

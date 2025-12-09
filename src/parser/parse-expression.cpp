@@ -138,6 +138,15 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 		} else if(curToken.type == TokenType::ifKeyword){
 			AstNode *expr = handleIf();
 			return expr;
+		} else if(curToken.type == TokenType::structKeyword){
+			AstNode *structure = handleStruct();
+			return structure;		
+		} else if(curToken.type == TokenType::enumKeyword){
+			AstNode *enumeration = handleEnum();
+			return enumeration;
+		} else if(curToken.type == TokenType::matchKeyword){
+			AstNode *match = handleMatch();
+			return match;
 		} else if(curToken.type == TokenType::squareStart){
 			if(lastPrimary){
 				AstNode *accessNode = new AstNode(NodeType::arrayAccess, BinaryOperation{});	

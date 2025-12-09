@@ -17,6 +17,9 @@ static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "or", TokenType::orKeyword },
     { "in", TokenType::inKeyword },
     { "is", TokenType::isKeyword },
+    { "struct", TokenType::structKeyword },
+    { "enum", TokenType::enumKeyword },
+    { "match", TokenType::matchKeyword },
 };
 
 static bool isKeyword(const std::string &word){

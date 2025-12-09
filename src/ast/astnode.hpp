@@ -10,6 +10,7 @@ enum class NodeType {
     expression, block,
     // Primaries (*not exhaustive)
     identifier, intLiteral, floatLiteral, stringLiteral, formatString, stringTemplate,
+    trueLiteral, falseLiteral,
     // Binary Arithmetic Operation
     addition, subtraction, multiplication, division, exponentiation,
     // Unary Operation
@@ -28,7 +29,10 @@ enum class NodeType {
     tuplePattern,
     tupleExpression,
     typedIdentifier,
-    castToInt, castToFloat
+    castToInt, castToFloat,
+    type,
+    structure, enumeration,
+    matchExpr,
 };
 
 static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
@@ -40,6 +44,8 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::stringLiteral, "stringLiteral" },
     { NodeType::stringTemplate, "stringTemplate" },
     { NodeType::formatString, "formatString" },
+    { NodeType::trueLiteral, "trueLiteral" },
+    { NodeType::falseLiteral, "falseLiteral" },
     { NodeType::addition, "addition" },
     { NodeType::subtraction, "subtraction" },
     { NodeType::multiplication, "multiplication" },
@@ -72,6 +78,10 @@ static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
     { NodeType::tupleExpression, "tupleExpression" },
     { NodeType::castToInt, "castToInt" },
     { NodeType::castToFloat, "castToFloat" },
+    { NodeType::type, "type" },
+    { NodeType::structure, "structure" },
+    { NodeType::enumeration, "enumeration" },
+    { NodeType::matchExpr, "matchExpr" },
 };
 
 class AstNode;
@@ -80,7 +90,6 @@ class Type;
 struct BinaryOperation {
     AstNode *left;
     AstNode *right;
-    Type *type;
 };
 
 struct UnaryOperation {
@@ -94,12 +103,12 @@ struct VariableDeclaration {
 };
 
 struct IntLiteral {
-    std::string value;
+    std::string text;
     int precomputed;
 };
 
 struct StringLiteral {
-    std::string value;
+    std::string text;
 };
 
 struct StringTemplate {
@@ -111,8 +120,14 @@ struct FormatString{
     std::vector<AstNode*> children;
 };
 
+struct TrueLiteral {
+};
+
+struct FalseLiteral {
+};
+
 struct FloatLiteral {
-    std::string value;
+    std::string text;
     double precomputed;
 };
 
@@ -130,9 +145,14 @@ struct FnParamList {
 };
 
 struct Function {
+    std::string name;
     AstNode *paramList;
-    AstNode *name;
+    AstNode *returnType;
     AstNode *block;
+};
+
+struct TypeNode {
+    AstNode* base;
 };
 
 struct Block {
@@ -186,6 +206,20 @@ struct CastToFloat {
     AstNode *expr;
 };
 
+struct Structure {
+    std::string name;
+    std::vector<AstNode*> fields;
+    std::vector<AstNode*> methods;
+};
+
+struct Enumeration {
+
+};
+
+struct MatchExpr {
+
+};
+
 struct AstNode {
     NodeType type;
     std::variant<
@@ -196,6 +230,8 @@ struct AstNode {
         StringLiteral,
         FormatString,
         StringTemplate,
+        TrueLiteral,
+        FalseLiteral,
         BinaryOperation,
         UnaryOperation,
         VariableDeclaration,
@@ -211,8 +247,13 @@ struct AstNode {
         TupleExpression,
         ArraySubscript,
         CastToInt,
-        CastToFloat
+        CastToFloat,
+        TypeNode,
+        Structure,
+        Enumeration,
+        MatchExpr
     > data;
+    Type *valueType;
     AstNode(){}
     AstNode(NodeType type)
       : type(type) 
@@ -239,124 +280,51 @@ static const char* getNodeTypeName(NodeType type){
 
 static AstNode* createNode(NodeType type){
     switch(type){
-    case NodeType::identifier:
-        return new AstNode(type, Identifier{});
-    break;
-    case NodeType::typedIdentifier:
-        return new AstNode(type, TypedIdentifier{});
-    break;
-    case NodeType::intLiteral:
-        return new AstNode(type, IntLiteral{});
-    break;
-    case NodeType::floatLiteral:
-        return new AstNode(type, FloatLiteral{});
-    break;
-    case NodeType::stringLiteral:
-        return new AstNode(type, StringLiteral{});
-    break;
-    case NodeType::stringTemplate:
-        return new AstNode(type, StringTemplate{});
-    break;
-    case NodeType::formatString:
-        return new AstNode(type, FormatString{});
-    break;
-    case NodeType::addition:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::subtraction:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::multiplication:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::division:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::exponentiation:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::plusSign:
-        return new AstNode(type, UnaryOperation{});
-    break;
-    case NodeType::minusSign:
-        return new AstNode(type, UnaryOperation{});
-    break;
-    case NodeType::assignment:
-        return new AstNode(type, Assignment{});
-    break;
-    case NodeType::conjunction:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::disjunction:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::negation:
-        return new AstNode(type, UnaryOperation{});
-    break;
-    case NodeType::equality:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::inequality:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::lessThan:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::greaterThan:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::lessEqual:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::greaterEqual:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::memberAccess:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::function:
-        return new AstNode(type, Function{});
-    break;
-    case NodeType::fnParamList:
-        return new AstNode(type, FnParamList{});
-    break;
-    case NodeType::block:
-        return new AstNode(type, Block{});
-    break;
-    case NodeType::ifExpr:
-        return new AstNode(type, IfExpr{});
-    break;
-    case NodeType::call:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::callArgsList:
-        return new AstNode(type, CallArgsList{});
-    break;
-    case NodeType::forExpr:
-        return new AstNode(type, ForExpr{});
-    break;
-    case NodeType::arrayLiteral:
-        return new AstNode(type, ArrayLiteral{});
-    break;
-    case NodeType::arrayAccess:
-        return new AstNode(type, BinaryOperation{});
-    break;
-    case NodeType::arraySubscript:
-        return new AstNode(type, ArraySubscript{});
-    break;
-    case NodeType::tuplePattern:
-        return new AstNode(type, TuplePattern{});
-    break;
-    case NodeType::tupleExpression:
-        return new AstNode(type, TupleExpression{});
-    break;
-    case NodeType::castToInt:
-        return new AstNode(type, CastToInt{});
-    break;
-    case NodeType::castToFloat:
-        return new AstNode(type, CastToFloat{});
-    break;
-    default:
-        throw SystemError("createNode unimplemented", __FILE_NAME__, __LINE__);
+    case NodeType::identifier: return new AstNode(type, Identifier{});
+    case NodeType::typedIdentifier: return new AstNode(type, TypedIdentifier{});
+    case NodeType::intLiteral: return new AstNode(type, IntLiteral{});
+    case NodeType::floatLiteral: return new AstNode(type, FloatLiteral{});
+    case NodeType::stringLiteral: return new AstNode(type, StringLiteral{});
+    case NodeType::stringTemplate: return new AstNode(type, StringTemplate{});
+    case NodeType::formatString: return new AstNode(type, FormatString{});
+    case NodeType::trueLiteral: return new AstNode(type, TrueLiteral{});
+    case NodeType::falseLiteral: return new AstNode(type, FalseLiteral{});
+    case NodeType::addition: return new AstNode(type, BinaryOperation{});
+    case NodeType::subtraction: return new AstNode(type, BinaryOperation{});
+    case NodeType::multiplication: return new AstNode(type, BinaryOperation{});
+    case NodeType::division: return new AstNode(type, BinaryOperation{});
+    case NodeType::exponentiation: return new AstNode(type, BinaryOperation{});
+    case NodeType::plusSign: return new AstNode(type, UnaryOperation{});
+    case NodeType::minusSign: return new AstNode(type, UnaryOperation{});
+    case NodeType::assignment: return new AstNode(type, Assignment{});
+    case NodeType::conjunction: return new AstNode(type, BinaryOperation{});
+    case NodeType::disjunction: return new AstNode(type, BinaryOperation{});
+    case NodeType::negation: return new AstNode(type, UnaryOperation{});
+    case NodeType::equality: return new AstNode(type, BinaryOperation{});
+    case NodeType::inequality: return new AstNode(type, BinaryOperation{});
+    case NodeType::lessThan: return new AstNode(type, BinaryOperation{});
+    case NodeType::greaterThan: return new AstNode(type, BinaryOperation{});
+    case NodeType::lessEqual: return new AstNode(type, BinaryOperation{});
+    case NodeType::greaterEqual: return new AstNode(type, BinaryOperation{});
+    case NodeType::memberAccess: return new AstNode(type, BinaryOperation{});
+    case NodeType::function: return new AstNode(type, Function{});
+    case NodeType::type: return new AstNode(type, TypeNode{});
+    case NodeType::fnParamList: return new AstNode(type, FnParamList{});
+    case NodeType::block: return new AstNode(type, Block{});
+    case NodeType::ifExpr: return new AstNode(type, IfExpr{});
+    case NodeType::call: return new AstNode(type, BinaryOperation{});
+    case NodeType::callArgsList: return new AstNode(type, CallArgsList{});
+    case NodeType::forExpr: return new AstNode(type, ForExpr{});
+    case NodeType::arrayLiteral: return new AstNode(type, ArrayLiteral{});
+    case NodeType::arrayAccess: return new AstNode(type, BinaryOperation{});
+    case NodeType::arraySubscript: return new AstNode(type, ArraySubscript{});
+    case NodeType::tuplePattern: return new AstNode(type, TuplePattern{});
+    case NodeType::tupleExpression: return new AstNode(type, TupleExpression{});
+    case NodeType::castToInt: return new AstNode(type, CastToInt{});
+    case NodeType::castToFloat: return new AstNode(type, CastToFloat{});
+    case NodeType::structure: return new AstNode(type, Structure{});
+    case NodeType::enumeration: return new AstNode(type, Enumeration{});
+    case NodeType::matchExpr: return new AstNode(type, MatchExpr{});
+    default: throw SystemError("createNode unimplemented", __FILE_NAME__, __LINE__);
     }
 }

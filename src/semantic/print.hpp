@@ -12,9 +12,9 @@ static void printAAst(AstNode *node, int level = 0){
         std::cout << "[NULL]" << std::endl;
         return;
     }
-    std::cout << getNodeTypeName(node->type);
+    std::cout << getNodeTypeName(node->type) << " : " << node->valueType->name;
     if(isOperator(node->type)){
-        std::cout << " : " << node->as<BinaryOperation>().type->name << std::endl;
+        std::cout << std::endl;
         if(isBinaryOperator(node->type)){
             printAAst(node->as<BinaryOperation>().left, level + 1);
             printAAst(node->as<BinaryOperation>().right, level + 1);
@@ -25,21 +25,19 @@ static void printAAst(AstNode *node, int level = 0){
     } 
     switch(node->type){
     case NodeType::identifier:
-        std::cout << " | " << node->as<Identifier>().name << std::endl; 
+        std::cout << std::endl; 
     break;
     case NodeType::typedIdentifier:
-        std::cout << " | ";
-        std::cout << node->as<TypedIdentifier>().name << " | "; 
-        std::cout << node->as<TypedIdentifier>().type << std::endl; 
+        std::cout << " | " << node->as<TypedIdentifier>().name << std::endl; 
     break;
     case NodeType::intLiteral:
-        std::cout << " | " << node->as<IntLiteral>().value << std::endl; 
+        std::cout << " | " << node->as<IntLiteral>().precomputed << std::endl; 
     break;
     case NodeType::floatLiteral:
-        std::cout << " | " << node->as<FloatLiteral>().value << std::endl;
+        std::cout << " | " << node->as<FloatLiteral>().precomputed << std::endl;
     break;
     case NodeType::stringLiteral:
-        std::cout << " | " << node->as<StringLiteral>().value << std::endl;
+        std::cout << " | " << node->as<StringLiteral>().text << std::endl;
     break;
     case NodeType::formatString:
         std::cout << std::endl;
@@ -52,6 +50,12 @@ static void printAAst(AstNode *node, int level = 0){
         printAAst(node->as<StringTemplate>().value, level + 1);
         printAAst(node->as<StringTemplate>().format, level + 1);
     break;
+    case NodeType::trueLiteral:
+        std::cout << std::endl;
+    break;
+    case NodeType::falseLiteral:
+        std::cout << std::endl;
+    break;
     case NodeType::fnParamList:
         std::cout << std::endl;
         for(AstNode *param : node->as<FnParamList>().params){
@@ -59,8 +63,7 @@ static void printAAst(AstNode *node, int level = 0){
         }
     break;
     case NodeType::function:
-        std::cout << std::endl;
-        printAAst(node->as<Function>().name, level + 1);
+        std::cout << " | " << node->as<Function>().name << std::endl;
         printAAst(node->as<Function>().paramList, level + 1);
         printAAst(node->as<Function>().block, level + 1);
     break;
@@ -120,6 +123,16 @@ static void printAAst(AstNode *node, int level = 0){
     case NodeType::castToFloat:
         std::cout << std::endl;
         printAAst(node->as<CastToFloat>().expr, level + 1);
+    break;
+    case NodeType::type:
+        std::cout << std::endl;
+        printAAst(node->as<TypeNode>().base, level + 1);
+    break;
+    case NodeType::structure:
+        std::cout << " | " << node->as<Structure>().name << std::endl;
+        for(AstNode *field : node->as<Structure>().fields){
+            printAAst(field, level + 1);
+        }
     break;
     default:
         throw SystemError(std::string("printAAst node type ") +

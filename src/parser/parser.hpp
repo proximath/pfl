@@ -19,6 +19,7 @@ private:
     AstNode* handleFnParamList();
     AstNode* handleBlock();
     AstNode* handleFn();
+    AstNode* handleTypeSyntax();
     AstNode* handleIf();
     AstNode* handleCallArgsList();
     AstNode* handleArrayLiteral();
@@ -26,15 +27,18 @@ private:
     AstNode* handleStringTemplate();
     AstNode* handleFormatString();
     AstNode* handleExpression(std::vector<TokenType>);
+    AstNode* handleStruct();
+    AstNode* handleEnum();
+    AstNode* handleMatch();
     AstNode* tryTuplePattern(TokenType);
     AstNode* tryTupleExpression(TokenType);
     AstNode* tryAssignment();
     AstNode* tryTypedIdentifier();
     void emitError(const std::string&);
     void popOperatorStack(std::vector<AstNode*>&, AstNode*&, AstNode*&);
-public:
-    AstNode* parse(std::vector<Token>);
     void addCheckpoint();
     void restoreCheckpoint();
     void commitCheckpoint();
+public:
+    AstNode* parse(std::vector<Token>);
 };

@@ -32,13 +32,13 @@ static void printAst(AstNode *node, int level = 0){
         std::cout << node->as<TypedIdentifier>().type << std::endl; 
     break;
     case NodeType::intLiteral:
-        std::cout << " | " << node->as<IntLiteral>().value << std::endl; 
+        std::cout << " | " << node->as<IntLiteral>().text << std::endl; 
     break;
     case NodeType::floatLiteral:
-        std::cout << " | " << node->as<FloatLiteral>().value << std::endl;
+        std::cout << " | " << node->as<FloatLiteral>().text << std::endl;
     break;
     case NodeType::stringLiteral:
-        std::cout << " | " << node->as<StringLiteral>().value << std::endl;
+        std::cout << " | " << node->as<StringLiteral>().text << std::endl;
     break;
     case NodeType::formatString:
         std::cout << std::endl;
@@ -51,6 +51,12 @@ static void printAst(AstNode *node, int level = 0){
         printAst(node->as<StringTemplate>().value, level + 1);
         printAst(node->as<StringTemplate>().format, level + 1);
     break;
+    case NodeType::trueLiteral:
+        std::cout << std::endl;
+    break;
+    case NodeType::falseLiteral:
+        std::cout << std::endl;
+    break;
     case NodeType::fnParamList:
         std::cout << std::endl;
         for(AstNode *param : node->as<FnParamList>().params){
@@ -58,9 +64,9 @@ static void printAst(AstNode *node, int level = 0){
         }
     break;
     case NodeType::function:
-        std::cout << std::endl;
-        printAst(node->as<Function>().name, level + 1);
+        std::cout << " | " << node->as<Function>().name << std::endl;
         printAst(node->as<Function>().paramList, level + 1);
+        printAst(node->as<Function>().returnType, level + 1);
         printAst(node->as<Function>().block, level + 1);
     break;
     case NodeType::block:
@@ -110,6 +116,16 @@ static void printAst(AstNode *node, int level = 0){
         std::cout << std::endl;
         for(AstNode *child : node->as<TupleExpression>().children){
             printAst(child, level + 1);
+        }
+    break;
+    case NodeType::type:
+        std::cout << std::endl;
+        printAst(node->as<TypeNode>().base, level + 1);
+    break;
+    case NodeType::structure:
+        std::cout << " | " << node->as<Structure>().name << std::endl;
+        for(AstNode *field : node->as<Structure>().fields){
+            printAst(field, level + 1);
         }
     break;
     default:

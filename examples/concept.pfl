@@ -1,0 +1,30 @@
+struct MyGeneric[T]:
+    where:
+        T impl Addable
+    a: T
+    b: T
+    sum(self)
+        self.a + self.b
+    
+struct MyGeneric[T impl Addable]
+    a: T
+    b: T
+    sum(self): # return type inferred
+        self.a + self.b   
+
+with:
+    T: Addable
+struct MyGeneric[T]:
+    a: T
+    b: T
+    sum(self):
+        self.a + self.b
+
+or just
+
+with T: Addable
+struct MyGeneric[T]:
+    a: T
+    b: T
+    sum(self):
+        self.a + self.b

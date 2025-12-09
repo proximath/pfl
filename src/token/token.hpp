@@ -72,6 +72,10 @@ enum class TokenType {
     orKeyword,
     inKeyword,
     isKeyword,
+    arrow,
+    structKeyword,
+    enumKeyword,
+    matchKeyword,
 };
 
 static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
@@ -134,6 +138,10 @@ static std::unordered_map<TokenType, std::string> tokenTypeNameLookup = {
     { TokenType::orKeyword, "orKeyword" },
     { TokenType::inKeyword, "inKeyword" },
     { TokenType::isKeyword, "isKeyword" },
+    { TokenType::arrow, "arrow" },
+    { TokenType::structKeyword, "structKeyword" },
+    { TokenType::enumKeyword, "enumKeyword" },
+    { TokenType::matchKeyword, "matchKeyword" },
 };
 
 struct Token {
