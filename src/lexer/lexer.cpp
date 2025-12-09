@@ -190,6 +190,7 @@ std::vector<Token> Lexer::getTokens(){
                 emitError("Identifier may not start with a number");
             } else {
                 tokens.push_back(createNewToken());
+                numberIsFloat = false;
                 curState = State::normal;
             }
             break;
@@ -203,6 +204,10 @@ std::vector<Token> Lexer::getTokens(){
             }
             while(isSymbol(prefix + c)){
                 c = consumeChar();
+            }
+            if(prefix == "." && std::isdigit(c)){
+                curState = State::number;
+                break;
             }
             tokens.push_back(createNewToken());
             curState = State::normal;

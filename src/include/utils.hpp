@@ -42,7 +42,17 @@ public:
     }
 };
 
-
+class SemanticError : public std::runtime_error {
+public:
+    SemanticError(const std::string &msg, const char *fileName, int lineNum)
+      : std::runtime_error("SEMANTIC ERROR (" + std::to_string(lineNum) + ", " + fileName + "): " + msg)
+    {
+    }
+    SemanticError(const std::string &msg)
+      : std::runtime_error("SEMANTIC ERROR: " + msg)
+    {
+    }
+};
 
 
 

@@ -5,6 +5,8 @@
 #include <unordered_map>
 
 struct Type {
+    std::string name;
     bool isPrimitive;
-    std::unordered_map<std::string, Type> attributes;
+    int index;
+    std::unordered_map<std::string, Type*> attributes;
 };

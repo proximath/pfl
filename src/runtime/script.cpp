@@ -1,6 +1,8 @@
 #include "interpreter.hpp"
 #include "../lexer/lexer.hpp"
 #include "../parser/parser.hpp"
+#include "../semantic/semantic.hpp"
+#include "../semantic/print.hpp"
 #include "../ast/print.hpp"
 
 void script(const std::string &path){
@@ -20,11 +22,16 @@ void script(const std::string &path){
         Parser parser;
         AstNode* ast = parser.parse(tokens);
         printAst(ast);
+        SemanticAnalyzer semanticAnalyzer(ast);
+        std::cout << "Finished" << std::endl;
+        printAAst(ast);
     } catch(SystemError err){
         std::cout << err.what() << std::endl;
     } catch(LexerError err){
         std::cout << err.what() << std::endl;
     } catch(ParserError err){
+        std::cout << err.what() << std::endl;
+    } catch(SemanticError err){
         std::cout << err.what() << std::endl;
     }
 }
