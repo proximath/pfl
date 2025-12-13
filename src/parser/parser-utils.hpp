@@ -3,81 +3,81 @@
 #include "../token/token.hpp"
 #include "../ast/astnode.hpp"
 
-static NodeType tokenToBinaryOperator(TokenType type){
+static ExprKind tokenToBinaryOperator(TokenType type){
 	switch(type){
 	case TokenType::plus:
-		return NodeType::addition;
+		return ExprKind::addition;
 	case TokenType::minus:
-		return NodeType::subtraction;
+		return ExprKind::subtraction;
 	case TokenType::asterisk:
-		return NodeType::multiplication;
+		return ExprKind::multiplication;
 	case TokenType::slash:
-		return NodeType::division;
+		return ExprKind::division;
 	case TokenType::exponent:
-		return NodeType::exponentiation;
+		return ExprKind::exponentiation;
 	case TokenType::doubleAmpersand:
-		return NodeType::conjunction;
+		return ExprKind::conjunction;
 	case TokenType::doubleBar:
-		return NodeType::disjunction;
+		return ExprKind::disjunction;
 	case TokenType::equal:
-		return NodeType::assignment;
+		return ExprKind::assignment;
 	case TokenType::doubleEqual:
-		return NodeType::equality;
+		return ExprKind::equality;
 	case TokenType::notEqual:
-		return NodeType::inequality;
+		return ExprKind::inequality;
 	case TokenType::less:
-		return NodeType::lessThan;
+		return ExprKind::lessThan;
 	case TokenType::more:
-		return NodeType::greaterThan;
+		return ExprKind::greaterThan;
 	case TokenType::lessEqual:
-		return NodeType::lessEqual;
+		return ExprKind::lessEqual;
 	case TokenType::moreEqual:
-		return NodeType::greaterEqual;
+		return ExprKind::greaterEqual;
 	case TokenType::dot:
-		return NodeType::memberAccess;
+		return ExprKind::memberAccess;
 	case TokenType::andKeyword:
-		return NodeType::conjunction;
+		return ExprKind::conjunction;
 	case TokenType::orKeyword:
-		return NodeType::disjunction;
+		return ExprKind::disjunction;
 	case TokenType::parenStart:
-		return NodeType::call;
+		return ExprKind::call;
 	case TokenType::squareStart:
-		return NodeType::arrayAccess;
+		return ExprKind::arrayAccess;
 	default:
 		throw SystemError("tokenToBinaryOperator not a binary operator", __FILE_NAME__, __LINE__);
 	}
 }
 
-static NodeType tokenToUnaryOperation(TokenType type){
+static ExprKind tokenToUnaryOperation(TokenType type){
 	switch(type){
 	case TokenType::plus:
-		return NodeType::plusSign;
+		return ExprKind::plusSign;
 	case TokenType::minus:
-		return NodeType::minusSign;
+		return ExprKind::minusSign;
 	case TokenType::notKeyword:
-		return NodeType::negation;
+		return ExprKind::negation;
 	default:
 		throw SystemError("tokenToUnaryOperator not a unary operator", __FILE_NAME__, __LINE__);
 	}
 }
 
-static AstNode* tokenToPrimary(Token &token){
+static ExprNode* tokenToPrimary(Token &token){
 	switch(token.type){
 	case TokenType::identifier:
-		return new AstNode(NodeType::identifier, Identifier{token.text});
+		return new ExprNode(ExprKind::identifier, Identifier{token.text});
 	case TokenType::intLiteral:
-		return new AstNode(NodeType::intLiteral, IntLiteral{token.text});
+		return new ExprNode(ExprKind::intLiteral, IntLiteral{token.text});
 	case TokenType::floatLiteral:
-		return new AstNode(NodeType::floatLiteral, FloatLiteral{token.text});
+		return new ExprNode(ExprKind::floatLiteral, FloatLiteral{token.text});
 	case TokenType::trueKeyword:
-		return new AstNode(NodeType::trueLiteral, TrueLiteral{});
+		return new ExprNode(ExprKind::boolLiteral, BoolLiteral{token.text});
 	case TokenType::falseKeyword:
-		return new AstNode(NodeType::falseLiteral, FalseLiteral{});
+		return new ExprNode(ExprKind::boolLiteral, BoolLiteral{token.text});
 	case TokenType::string:
-		return new AstNode(NodeType::stringLiteral, StringLiteral{token.text});
+		return new ExprNode(ExprKind::stringLiteral, StringLiteral{token.text});
 	case TokenType::formatString:
-		return new AstNode(NodeType::formatString, FormatString{
-			{new AstNode(NodeType::stringLiteral, StringLiteral{token.text})}
+		return new ExprNode(ExprKind::formatString, FormatString{
+			{new ExprNode(ExprKind::stringLiteral, StringLiteral{token.text})}
 		});
 	default:
 		throw SystemError("tokenToPrimary not a primary", __FILE_NAME__, __LINE__);
@@ -123,17 +123,16 @@ static TokenType getMatchingBrace(const TokenType braceType){
 }
 
 // Note: there's a token version as well
-static bool isPrimary(NodeType type){
+static bool isPrimary(ExprKind type){
     return 
-    type == NodeType::identifier ||
-    type == NodeType::intLiteral ||
-    type == NodeType::floatLiteral ||
-    type == NodeType::stringLiteral ||
-    type == NodeType::trueLiteral ||
-    type == NodeType::falseLiteral ||
-	type == NodeType::formatString ||
-    type == NodeType::callArgsList ||
-    type == NodeType::arrayLiteral ||
-    type == NodeType::arraySubscript;
+    type == ExprKind::identifier ||
+    type == ExprKind::intLiteral ||
+    type == ExprKind::floatLiteral ||
+    type == ExprKind::stringLiteral ||
+    type == ExprKind::boolLiteral ||
+	type == ExprKind::formatString ||
+    type == ExprKind::callArgsList ||
+    type == ExprKind::arrayLiteral ||
+    type == ExprKind::arraySubscript;
 }
 

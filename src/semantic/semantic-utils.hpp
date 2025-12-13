@@ -19,14 +19,14 @@ Scope* SemanticAnalyzer::popScope(){
     return curScope;
 }
 
-AstNode* insertImplicitCastNode(Type &fromType, Type &toType, AstNode *expr){
-    AstNode  *returned;
+ExprNode* insertImplicitCastNode(Type &fromType, Type &toType, ExprNode *expr){
+    ExprNode  *returned;
     if(toType.index == FLOAT_INDEX){
-        returned = createNode(NodeType::castToFloat);
+        returned = createNode(ExprKind::castToFloat);
         returned->valueType = &types[FLOAT_INDEX];
         returned->as<CastToFloat>().expr = expr;
     } else if(toType.index == INT_INDEX){
-        returned = createNode(NodeType::castToInt);
+        returned = createNode(ExprKind::castToInt);
         returned->valueType = &types[INT_INDEX];
         returned->as<CastToInt>().expr = expr;
     }
@@ -40,7 +40,7 @@ bool isImplicitCastable(Type &from, Type &to){
     return false;
 }
 
-Type* SemanticAnalyzer::promoteIfNeeded(Type *leftType, Type *rightType, AstNode *left, AstNode *right, AstNode *parent){
+Type* SemanticAnalyzer::promoteIfNeeded(Type *leftType, Type *rightType, ExprNode *left, ExprNode *right, ExprNode *parent){
     if(isImplicitCastable(*leftType, *rightType)){
             parent->as<BinaryOperation>().left = insertImplicitCastNode(
                 *leftType, 

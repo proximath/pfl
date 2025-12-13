@@ -5,12 +5,12 @@
 
 #include <variant>
 
-enum class NodeType {
+enum class ExprKind {
     // Building blocks
-    expression, block,
+    block,
     // Primaries (*not exhaustive)
     identifier, intLiteral, floatLiteral, stringLiteral, formatString, stringTemplate,
-    trueLiteral, falseLiteral,
+    boolLiteral,
     // Binary Arithmetic Operation
     addition, subtraction, multiplication, division, exponentiation,
     // Unary Operation
@@ -35,71 +35,69 @@ enum class NodeType {
     matchExpr,
 };
 
-static std::unordered_map<NodeType, const char*> nodeTypeNameLookup = {
-    { NodeType::expression, "expression" },
-    { NodeType::identifier, "identifier" },
-    { NodeType::typedIdentifier, "typedIdentifier" },
-    { NodeType::intLiteral, "intLiteral" },
-    { NodeType::floatLiteral, "floatLiteral" },
-    { NodeType::stringLiteral, "stringLiteral" },
-    { NodeType::stringTemplate, "stringTemplate" },
-    { NodeType::formatString, "formatString" },
-    { NodeType::trueLiteral, "trueLiteral" },
-    { NodeType::falseLiteral, "falseLiteral" },
-    { NodeType::addition, "addition" },
-    { NodeType::subtraction, "subtraction" },
-    { NodeType::multiplication, "multiplication" },
-    { NodeType::division, "division" },
-    { NodeType::exponentiation, "exponentiation" },
-    { NodeType::plusSign, "plusSign" },
-    { NodeType::minusSign, "minusSign" },
-    { NodeType::assignment, "assignment" },
-    { NodeType::conjunction, "conjunction" },
-    { NodeType::disjunction, "disjunction" },
-    { NodeType::negation, "negation" },
-    { NodeType::equality, "equality" },
-    { NodeType::inequality, "inequality" },
-    { NodeType::lessThan, "lessThan" },
-    { NodeType::greaterThan, "greaterThan" },
-    { NodeType::lessEqual, "lessEqual" },
-    { NodeType::greaterEqual, "greaterEqual" },
-    { NodeType::memberAccess, "memberAccess" },
-    { NodeType::function, "function" },
-    { NodeType::fnParamList, "fnParamList" },
-    { NodeType::block, "block" },
-    { NodeType::ifExpr, "ifExpr" },
-    { NodeType::call, "call" },
-    { NodeType::callArgsList, "callArgsList" },
-    { NodeType::forExpr, "forExpr" },
-    { NodeType::arrayLiteral, "arrayLiteral" },
-    { NodeType::arrayAccess, "arrayAccess" },
-    { NodeType::arraySubscript, "arraySubscript" },
-    { NodeType::tuplePattern, "tuplePattern" },
-    { NodeType::tupleExpression, "tupleExpression" },
-    { NodeType::castToInt, "castToInt" },
-    { NodeType::castToFloat, "castToFloat" },
-    { NodeType::type, "type" },
-    { NodeType::structure, "structure" },
-    { NodeType::enumeration, "enumeration" },
-    { NodeType::matchExpr, "matchExpr" },
+static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
+    { ExprKind::identifier, "identifier" },
+    { ExprKind::typedIdentifier, "typedIdentifier" },
+    { ExprKind::intLiteral, "intLiteral" },
+    { ExprKind::floatLiteral, "floatLiteral" },
+    { ExprKind::stringLiteral, "stringLiteral" },
+    { ExprKind::stringTemplate, "stringTemplate" },
+    { ExprKind::formatString, "formatString" },
+    { ExprKind::boolLiteral, "boolLiteral" },
+    { ExprKind::addition, "addition" },
+    { ExprKind::subtraction, "subtraction" },
+    { ExprKind::multiplication, "multiplication" },
+    { ExprKind::division, "division" },
+    { ExprKind::exponentiation, "exponentiation" },
+    { ExprKind::plusSign, "plusSign" },
+    { ExprKind::minusSign, "minusSign" },
+    { ExprKind::assignment, "assignment" },
+    { ExprKind::conjunction, "conjunction" },
+    { ExprKind::disjunction, "disjunction" },
+    { ExprKind::negation, "negation" },
+    { ExprKind::equality, "equality" },
+    { ExprKind::inequality, "inequality" },
+    { ExprKind::lessThan, "lessThan" },
+    { ExprKind::greaterThan, "greaterThan" },
+    { ExprKind::lessEqual, "lessEqual" },
+    { ExprKind::greaterEqual, "greaterEqual" },
+    { ExprKind::memberAccess, "memberAccess" },
+    { ExprKind::function, "function" },
+    { ExprKind::fnParamList, "fnParamList" },
+    { ExprKind::block, "block" },
+    { ExprKind::ifExpr, "ifExpr" },
+    { ExprKind::call, "call" },
+    { ExprKind::callArgsList, "callArgsList" },
+    { ExprKind::forExpr, "forExpr" },
+    { ExprKind::arrayLiteral, "arrayLiteral" },
+    { ExprKind::arrayAccess, "arrayAccess" },
+    { ExprKind::arraySubscript, "arraySubscript" },
+    { ExprKind::tuplePattern, "tuplePattern" },
+    { ExprKind::tupleExpression, "tupleExpression" },
+    { ExprKind::castToInt, "castToInt" },
+    { ExprKind::castToFloat, "castToFloat" },
+    { ExprKind::type, "type" },
+    { ExprKind::structure, "structure" },
+    { ExprKind::enumeration, "enumeration" },
+    { ExprKind::matchExpr, "matchExpr" },
 };
 
-class AstNode;
+class ExprNode;
 class Type;
 
 struct BinaryOperation {
-    AstNode *left;
-    AstNode *right;
+    ExprNode *left;
+    ExprNode *right;
 };
 
 struct UnaryOperation {
-    AstNode *expr;
+    ExprNode *expr;
 };
 
 struct VariableDeclaration {
-    AstNode *variableName;
-    AstNode *typeName;
-    AstNode *value;
+    ExprNode *variableName;
+    ExprNode *typeName;
+    ExprNode *value;
 };
 
 struct IntLiteral {
@@ -112,18 +110,17 @@ struct StringLiteral {
 };
 
 struct StringTemplate {
-    AstNode *value;
-    AstNode *format;
+    ExprNode *value;
+    ExprNode *format;
 };
 
 struct FormatString{
-    std::vector<AstNode*> children;
+    std::vector<ExprNode*> children;
 };
 
-struct TrueLiteral {
-};
-
-struct FalseLiteral {
+struct BoolLiteral {
+    std::string text;
+    double precomputed;
 };
 
 struct FloatLiteral {
@@ -141,75 +138,75 @@ struct TypedIdentifier {
 };
 
 struct FnParamList {
-    std::vector<AstNode*> params;
+    std::vector<ExprNode*> params;
 };
 
 struct Function {
     std::string name;
-    AstNode *paramList;
-    AstNode *returnType;
-    AstNode *block;
+    ExprNode *paramList;
+    ExprNode *returnType;
+    ExprNode *block;
 };
 
 struct TypeNode {
-    AstNode* base;
+    ExprNode* base;
 };
 
 struct Block {
-    std::vector<AstNode*> expressions;
+    std::vector<ExprNode*> expressions;
 };
 
 struct IfExpr {
-    AstNode *condition;
-    AstNode *ifBlock;
-    std::vector<AstNode*> elifCondition;
-    std::vector<AstNode*> elifBlock;
-    AstNode *elseBlock;
+    ExprNode *condition;
+    ExprNode *ifBlock;
+    std::vector<ExprNode*> elifCondition;
+    std::vector<ExprNode*> elifBlock;
+    ExprNode *elseBlock;
 };
 
 struct ForExpr {
-    AstNode *pattern;
-    AstNode *expr;
-    AstNode *block;
+    ExprNode *pattern;
+    ExprNode *expr;
+    ExprNode *block;
 };
 
 struct ArrayLiteral {
-    std::vector<AstNode*> elements;
+    std::vector<ExprNode*> elements;
 };
 
 struct Assignment {
-    AstNode *lhs;
-    AstNode *rhs;
+    ExprNode *lhs;
+    ExprNode *rhs;
 };
 
 struct TuplePattern {
-    std::vector<AstNode*> children;
+    std::vector<ExprNode*> children;
 };
 
 struct TupleExpression {
-    std::vector<AstNode*> children;
+    std::vector<ExprNode*> children;
 };
 
 struct CallArgsList {
-    std::vector<AstNode*> args;
+    std::vector<ExprNode*> args;
 };
 
 struct ArraySubscript {
-    AstNode *index;
+    ExprNode *index;
 };
 
 struct CastToInt {
-    AstNode *expr;
+    ExprNode *expr;
 };
 
 struct CastToFloat {
-    AstNode *expr;
+    ExprNode *expr;
 };
 
 struct Structure {
     std::string name;
-    std::vector<AstNode*> fields;
-    std::vector<AstNode*> methods;
+    std::vector<ExprNode*> fields;
+    std::vector<ExprNode*> methods;
 };
 
 struct Enumeration {
@@ -220,8 +217,8 @@ struct MatchExpr {
 
 };
 
-struct AstNode {
-    NodeType type;
+struct ExprNode {
+    ExprKind kind;
     std::variant<
         Identifier,
         TypedIdentifier,
@@ -230,8 +227,7 @@ struct AstNode {
         StringLiteral,
         FormatString,
         StringTemplate,
-        TrueLiteral,
-        FalseLiteral,
+        BoolLiteral,
         BinaryOperation,
         UnaryOperation,
         VariableDeclaration,
@@ -254,14 +250,9 @@ struct AstNode {
         MatchExpr
     > data;
     Type *valueType;
-    AstNode(){}
-    AstNode(NodeType type)
-      : type(type) 
-    {
-    }
     template<typename T>
-    AstNode(NodeType type, const T &data)
-      : type(type)
+    ExprNode(ExprKind type, const T &data)
+      : kind(type)
     {
         this->data = data;
     }
@@ -271,60 +262,59 @@ struct AstNode {
     }
 };
 
-static const char* getNodeTypeName(NodeType type){
+static const char* getNodeTypeName(ExprKind type){
     if(!nodeTypeNameLookup.count(type)){
         throw SystemError("getNodeTypeName not implemented", __FILE__, __LINE__);
     }
     return nodeTypeNameLookup[type];
 }
 
-static AstNode* createNode(NodeType type){
+static ExprNode* createNode(ExprKind type){
     switch(type){
-    case NodeType::identifier: return new AstNode(type, Identifier{});
-    case NodeType::typedIdentifier: return new AstNode(type, TypedIdentifier{});
-    case NodeType::intLiteral: return new AstNode(type, IntLiteral{});
-    case NodeType::floatLiteral: return new AstNode(type, FloatLiteral{});
-    case NodeType::stringLiteral: return new AstNode(type, StringLiteral{});
-    case NodeType::stringTemplate: return new AstNode(type, StringTemplate{});
-    case NodeType::formatString: return new AstNode(type, FormatString{});
-    case NodeType::trueLiteral: return new AstNode(type, TrueLiteral{});
-    case NodeType::falseLiteral: return new AstNode(type, FalseLiteral{});
-    case NodeType::addition: return new AstNode(type, BinaryOperation{});
-    case NodeType::subtraction: return new AstNode(type, BinaryOperation{});
-    case NodeType::multiplication: return new AstNode(type, BinaryOperation{});
-    case NodeType::division: return new AstNode(type, BinaryOperation{});
-    case NodeType::exponentiation: return new AstNode(type, BinaryOperation{});
-    case NodeType::plusSign: return new AstNode(type, UnaryOperation{});
-    case NodeType::minusSign: return new AstNode(type, UnaryOperation{});
-    case NodeType::assignment: return new AstNode(type, Assignment{});
-    case NodeType::conjunction: return new AstNode(type, BinaryOperation{});
-    case NodeType::disjunction: return new AstNode(type, BinaryOperation{});
-    case NodeType::negation: return new AstNode(type, UnaryOperation{});
-    case NodeType::equality: return new AstNode(type, BinaryOperation{});
-    case NodeType::inequality: return new AstNode(type, BinaryOperation{});
-    case NodeType::lessThan: return new AstNode(type, BinaryOperation{});
-    case NodeType::greaterThan: return new AstNode(type, BinaryOperation{});
-    case NodeType::lessEqual: return new AstNode(type, BinaryOperation{});
-    case NodeType::greaterEqual: return new AstNode(type, BinaryOperation{});
-    case NodeType::memberAccess: return new AstNode(type, BinaryOperation{});
-    case NodeType::function: return new AstNode(type, Function{});
-    case NodeType::type: return new AstNode(type, TypeNode{});
-    case NodeType::fnParamList: return new AstNode(type, FnParamList{});
-    case NodeType::block: return new AstNode(type, Block{});
-    case NodeType::ifExpr: return new AstNode(type, IfExpr{});
-    case NodeType::call: return new AstNode(type, BinaryOperation{});
-    case NodeType::callArgsList: return new AstNode(type, CallArgsList{});
-    case NodeType::forExpr: return new AstNode(type, ForExpr{});
-    case NodeType::arrayLiteral: return new AstNode(type, ArrayLiteral{});
-    case NodeType::arrayAccess: return new AstNode(type, BinaryOperation{});
-    case NodeType::arraySubscript: return new AstNode(type, ArraySubscript{});
-    case NodeType::tuplePattern: return new AstNode(type, TuplePattern{});
-    case NodeType::tupleExpression: return new AstNode(type, TupleExpression{});
-    case NodeType::castToInt: return new AstNode(type, CastToInt{});
-    case NodeType::castToFloat: return new AstNode(type, CastToFloat{});
-    case NodeType::structure: return new AstNode(type, Structure{});
-    case NodeType::enumeration: return new AstNode(type, Enumeration{});
-    case NodeType::matchExpr: return new AstNode(type, MatchExpr{});
+    case ExprKind::identifier: return new ExprNode(type, Identifier{});
+    case ExprKind::typedIdentifier: return new ExprNode(type, TypedIdentifier{});
+    case ExprKind::intLiteral: return new ExprNode(type, IntLiteral{});
+    case ExprKind::floatLiteral: return new ExprNode(type, FloatLiteral{});
+    case ExprKind::stringLiteral: return new ExprNode(type, StringLiteral{});
+    case ExprKind::stringTemplate: return new ExprNode(type, StringTemplate{});
+    case ExprKind::formatString: return new ExprNode(type, FormatString{});
+    case ExprKind::boolLiteral: return new ExprNode(type, BoolLiteral{});
+    case ExprKind::addition: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::subtraction: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::multiplication: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::division: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::exponentiation: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::plusSign: return new ExprNode(type, UnaryOperation{});
+    case ExprKind::minusSign: return new ExprNode(type, UnaryOperation{});
+    case ExprKind::assignment: return new ExprNode(type, Assignment{});
+    case ExprKind::conjunction: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::disjunction: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::negation: return new ExprNode(type, UnaryOperation{});
+    case ExprKind::equality: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::inequality: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::lessThan: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::greaterThan: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::lessEqual: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::greaterEqual: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::memberAccess: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::function: return new ExprNode(type, Function{});
+    case ExprKind::type: return new ExprNode(type, TypeNode{});
+    case ExprKind::fnParamList: return new ExprNode(type, FnParamList{});
+    case ExprKind::block: return new ExprNode(type, Block{});
+    case ExprKind::ifExpr: return new ExprNode(type, IfExpr{});
+    case ExprKind::call: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::callArgsList: return new ExprNode(type, CallArgsList{});
+    case ExprKind::forExpr: return new ExprNode(type, ForExpr{});
+    case ExprKind::arrayLiteral: return new ExprNode(type, ArrayLiteral{});
+    case ExprKind::arrayAccess: return new ExprNode(type, BinaryOperation{});
+    case ExprKind::arraySubscript: return new ExprNode(type, ArraySubscript{});
+    case ExprKind::tuplePattern: return new ExprNode(type, TuplePattern{});
+    case ExprKind::tupleExpression: return new ExprNode(type, TupleExpression{});
+    case ExprKind::castToInt: return new ExprNode(type, CastToInt{});
+    case ExprKind::castToFloat: return new ExprNode(type, CastToFloat{});
+    case ExprKind::structure: return new ExprNode(type, Structure{});
+    case ExprKind::enumeration: return new ExprNode(type, Enumeration{});
+    case ExprKind::matchExpr: return new ExprNode(type, MatchExpr{});
     default: throw SystemError("createNode unimplemented", __FILE_NAME__, __LINE__);
     }
 }

@@ -16,19 +16,19 @@ static constexpr const int TYPE_INDEX = 5;
 
 class SemanticAnalyzer {
 private:
-    AstNode *curNode;
+    ExprNode *curNode;
     Scope *curScope;
-    Type& getPrimaryType(AstNode*);
-    Type& typeCheckExpr(AstNode*);
-    void precomputePrimary(AstNode*);
+    Type& getPrimaryType(ExprNode*);
+    Type& typeCheckExpr(ExprNode*);
+    void precomputePrimary(ExprNode*);
     void emitError(const std::string&);
     bool isAlreadyInScope(const std::string&);
     Symbol* findSymbol(const std::string&, Scope*);
     Scope* pushNewScope();
     Scope* popScope();
-    Type* promoteIfNeeded(Type*, Type*, AstNode*, AstNode*, AstNode*);
-    Type* analyzeAssignment(AstNode*);
+    Type* promoteIfNeeded(Type*, Type*, ExprNode*, ExprNode*, ExprNode*);
+    Type* analyzeAssignment(ExprNode*);
 public:
-    SemanticAnalyzer(AstNode*);
-    Type& analyze(AstNode*);
+    SemanticAnalyzer(ExprNode*);
+    Type& analyze(ExprNode*);
 };

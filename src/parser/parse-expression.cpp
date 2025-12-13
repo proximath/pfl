@@ -5,20 +5,20 @@
 
 #include <algorithm>
 
-void Parser::popOperatorStack(std::vector<AstNode*> &operatorNodes, AstNode *&lastPrimary, AstNode *&newNode){
-	if(!operatorNodes.empty() && getRbp(operatorNodes.back()->type) <= getLbp(newNode->type)){
+void Parser::popOperatorStack(std::vector<ExprNode*> &operatorNodes, ExprNode *&lastPrimary, ExprNode *&newNode){
+	if(!operatorNodes.empty() && getRbp(operatorNodes.back()->kind) <= getLbp(newNode->kind)){
 		newNode->as<BinaryOperation>().left = lastPrimary;
-	} else if(!operatorNodes.empty() && isBinaryOperator(operatorNodes.back()->type)) {
+	} else if(!operatorNodes.empty() && isBinaryOperator(operatorNodes.back()->kind)) {
 		operatorNodes.back()->as<BinaryOperation>().right = lastPrimary;
-	} else if(!operatorNodes.empty() && isPrefixOperator(operatorNodes.back()->type)) {
+	} else if(!operatorNodes.empty() && isPrefixOperator(operatorNodes.back()->kind)) {
 		operatorNodes.back()->as<UnaryOperation>().expr = lastPrimary;
 	}
 	while(operatorNodes.size() >= 2){
-		AstNode *last = operatorNodes.back();
-		AstNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
-		if(getRbp(last->type) <= getLbp(newNode->type)){
+		ExprNode *last = operatorNodes.back();
+		ExprNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
+		if(getRbp(last->kind) <= getLbp(newNode->kind)){
 			break;
-		} else if(getRbp(secLast->type) < getLbp(newNode->type)){
+		} else if(getRbp(secLast->kind) < getLbp(newNode->kind)){
 			newNode->as<BinaryOperation>().left = last;
 			operatorNodes.pop_back();
 		} else {
@@ -26,7 +26,7 @@ void Parser::popOperatorStack(std::vector<AstNode*> &operatorNodes, AstNode *&la
 			operatorNodes.pop_back();
 		}
 	}
-	if(operatorNodes.size() == 1 && getRbp(operatorNodes.back()->type) > getLbp(newNode->type)){
+	if(operatorNodes.size() == 1 && getRbp(operatorNodes.back()->kind) > getLbp(newNode->kind)){
 		newNode->as<BinaryOperation>().left = operatorNodes.back();
 		operatorNodes.pop_back();
 	} else if(operatorNodes.empty()){
@@ -35,14 +35,14 @@ void Parser::popOperatorStack(std::vector<AstNode*> &operatorNodes, AstNode *&la
     operatorNodes.push_back(newNode);
 }
 
-AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
+ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 	//std::cout << "EXP" << std::endl;
-	AstNode *lastPrimary = nullptr;
+	ExprNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
-	std::vector<AstNode*> operatorNodes;
+	std::vector<ExprNode*> operatorNodes;
 		
-	//AstNode *assignment = tryAssignment({ TokenType::newline });
+	//ExprNode *assignment = tryAssignment({ TokenType::newline });
 	// if(assignment){
 	// 	return assignment;
 	// }
@@ -50,24 +50,24 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 		Token &curToken = tokens[tokenInd];
 		//std::cout << "Reading token " << getTokenTypeName(curToken.type) << std::endl;
 		// for(int i = 0; i < operatorNodes.size(); i++){
-		// 	std::cout << getNodeTypeName(operatorNodes[i]->type) << " ";
+		// 	std::cout << ExprKind(operatorNodes[i]->type) << " ";
 		// }
 		// std::cout << std::endl;
 		//std::cout << (std::find(delimeter.begin(), delimeter.end(), curToken.type)) << " " << (delimeter.end()) << std::endl;
 		if(std::find(delimeters.begin(), delimeters.end(), curToken.type) != delimeters.end()){
 			//std::cout << "HEY" << std::endl;
 			if(!operatorNodes.empty() && lastPrimary){
-				AstNode *lastOp = operatorNodes.back();
-				if(isPrefixOperator(lastOp->type)){
+				ExprNode *lastOp = operatorNodes.back();
+				if(isPrefixOperator(lastOp->kind)){
 					lastOp->as<UnaryOperation>().expr = lastPrimary;
-				} else if(isBinaryOperator(lastOp->type)){
+				} else if(isBinaryOperator(lastOp->kind)){
 					lastOp->as<BinaryOperation>().right = lastPrimary;
 				}
 			}
 			while(operatorNodes.size() >= 2){
-				AstNode *last = operatorNodes.back();
-				AstNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
-				if(isPrefixOperator(secLast->type)){
+				ExprNode *last = operatorNodes.back();
+				ExprNode *secLast = operatorNodes.at(operatorNodes.size() - 2);
+				if(isPrefixOperator(secLast->kind)){
 					secLast->as<UnaryOperation>().expr = last;
 				} else {
 					secLast->as<BinaryOperation>().right = last;
@@ -77,7 +77,7 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			tokenInd++;
 			break;
 		} else if(isOperator(curToken) && (!lastPrimary || prevOperator)){ // Prefix Operator
-			AstNode *newNode = new AstNode(
+			ExprNode *newNode = new ExprNode(
 				tokenToUnaryOperation(curToken.type),
 				UnaryOperation()
 			);
@@ -87,14 +87,14 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			prevOperator = true;
 		} else if(isOperator(curToken)){ // Binary/Postfix Operator
 			//std::cout << "Add binary/postfix operator" << std::endl;
-			AstNode *newNode; 
+			ExprNode *newNode; 
 			if(isPostfixOp(curToken.type)){
-				newNode = new AstNode(
+				newNode = new ExprNode(
 					tokenToUnaryOperation(curToken.type),
 					UnaryOperation{}
 				);
 			} else {
-				newNode = new AstNode(
+				newNode = new ExprNode(
 					tokenToBinaryOperator(curToken.type),
 					BinaryOperation{}
 				);
@@ -105,18 +105,18 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			prevOperator = true;
 		} else if(isPrimary(curToken)){
 			if(lastPrimary){
-				//std::cerr << getNodeTypeName(lastPrimary->type) << " " << lastPrimary->as<Identifier>().name << " "
+				//std::cerr << ExprKind(lastPrimary->type) << " " << lastPrimary->as<Identifier>().name << " "
 				// << curToken.text << " " << curToken.line_num << " " << curToken.column_num << std::endl;
 				emitError("Expected an operator");
 			}
-			AstNode *newNode = tokenToPrimary(curToken); 			
+			ExprNode *newNode = tokenToPrimary(curToken); 			
 			lastPrimary = newNode;
 			prevOperator = false;
 			prevUnary = false;
 		} else if(curToken.type == TokenType::parenStart){
 			if(lastPrimary){
-				AstNode *callNode = new AstNode(NodeType::call, BinaryOperation{});
-				AstNode *args = handleCallArgsList();
+				ExprNode *callNode = new ExprNode(ExprKind::call, BinaryOperation{});
+				ExprNode *args = handleCallArgsList();
 				popOperatorStack(operatorNodes, lastPrimary, callNode);
 				lastPrimary = args;
 			} else {
@@ -127,34 +127,34 @@ AstNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			prevUnary = false;
 			continue;
 		} else if(curToken.type == TokenType::doubleQuote){
-			AstNode *format = handleFormatString();
+			ExprNode *format = handleFormatString();
 			lastPrimary = format;
 			prevOperator = false;
 			prevUnary = false;
 			continue;
 		} else if(curToken.type == TokenType::fnKeyword){
-			AstNode *func = handleFn();
+			ExprNode *func = handleFn();
 			return func;
 		} else if(curToken.type == TokenType::ifKeyword){
-			AstNode *expr = handleIf();
+			ExprNode *expr = handleIf();
 			return expr;
 		} else if(curToken.type == TokenType::structKeyword){
-			AstNode *structure = handleStruct();
+			ExprNode *structure = handleStruct();
 			return structure;		
 		} else if(curToken.type == TokenType::enumKeyword){
-			AstNode *enumeration = handleEnum();
+			ExprNode *enumeration = handleEnum();
 			return enumeration;
 		} else if(curToken.type == TokenType::matchKeyword){
-			AstNode *match = handleMatch();
+			ExprNode *match = handleMatch();
 			return match;
 		} else if(curToken.type == TokenType::squareStart){
 			if(lastPrimary){
-				AstNode *accessNode = new AstNode(NodeType::arrayAccess, BinaryOperation{});	
-				AstNode *subscript = handleArraySubscript();
+				ExprNode *accessNode = new ExprNode(ExprKind::arrayAccess, BinaryOperation{});	
+				ExprNode *subscript = handleArraySubscript();
 				popOperatorStack(operatorNodes, lastPrimary, accessNode);
 				lastPrimary = subscript;
 			} else {
-				AstNode *array = handleArrayLiteral();
+				ExprNode *array = handleArrayLiteral();
 				lastPrimary = array;
 			}
 			prevOperator = false;

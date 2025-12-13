@@ -20,7 +20,7 @@ void script(const std::string &path){
         }
         std::cout << "]" << std::endl;
         Parser parser;
-        AstNode* ast = parser.parse(tokens);
+        ExprNode* ast = parser.parse(tokens);
         printAst(ast);
         SemanticAnalyzer semanticAnalyzer(ast);
         std::cout << "Finished" << std::endl;

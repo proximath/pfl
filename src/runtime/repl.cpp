@@ -58,7 +58,7 @@ void repl(){
                 std::cout << getTokenTypeName(token.type) << "(" << token.text << ") ";
             }
             std::cout << "]" << std::endl;
-            AstNode* ast = parser.parse(tokens);
+            ExprNode* ast = parser.parse(tokens);
             printAst(ast);
         } catch(LexerError err){
             std::cerr << err.what() << std::endl;

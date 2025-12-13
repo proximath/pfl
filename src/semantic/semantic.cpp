@@ -2,7 +2,7 @@
 #include "../parser/parser-utils.hpp"
 #include "semantic-utils.hpp"
 
-SemanticAnalyzer::SemanticAnalyzer(AstNode *root){
+SemanticAnalyzer::SemanticAnalyzer(ExprNode *root){
     curNode = root;
     curScope = new Scope;
     types.push_back({ Type{ "none", true, NONE_INDEX } });
@@ -20,28 +20,25 @@ SemanticAnalyzer::SemanticAnalyzer(AstNode *root){
     analyze(curNode);
 }
 
-Type& SemanticAnalyzer::analyze(AstNode *root){
+Type& SemanticAnalyzer::analyze(ExprNode *root){
     return typeCheckExpr(root);
 }
 
-Type& SemanticAnalyzer::getPrimaryType(AstNode *primary){
-    switch (primary->type) {
-    case NodeType::intLiteral:
+Type& SemanticAnalyzer::getPrimaryType(ExprNode *primary){
+    switch (primary->kind) {
+    case ExprKind::intLiteral:
         return types[INT_INDEX];
     break;
-    case NodeType::floatLiteral:
+    case ExprKind::floatLiteral:
         return types[FLOAT_INDEX];
     break;
-    case NodeType::falseLiteral:
+    case ExprKind::boolLiteral:
         return types[BOOL_INDEX];
     break;
-    case NodeType::trueLiteral:
-        return types[BOOL_INDEX];
-    break;
-    case NodeType::arrayLiteral:
+    case ExprKind::arrayLiteral:
         throw SystemError("unimplemented", __FILE_NAME__, __LINE__);
     break;
-    case NodeType::stringLiteral:
+    case ExprKind::stringLiteral:
         return types[STR_INDEX];
     break;
     default:
@@ -49,14 +46,14 @@ Type& SemanticAnalyzer::getPrimaryType(AstNode *primary){
     }
 }
 
-void SemanticAnalyzer::precomputePrimary(AstNode *primary){
-    switch (primary->type) {
-    case NodeType::intLiteral:
+void SemanticAnalyzer::precomputePrimary(ExprNode *primary){
+    switch (primary->kind) {
+    case ExprKind::intLiteral:
         primary->as<IntLiteral>().precomputed = std::stoi(
             primary->as<IntLiteral>().text
         );
     break;
-    case NodeType::floatLiteral:
+    case ExprKind::floatLiteral:
         primary->as<FloatLiteral>().precomputed = std::stod(
             primary->as<FloatLiteral>().text
         );
@@ -71,26 +68,26 @@ bool isArithmeticType(Type &ty){
         ty.index == FLOAT_INDEX;
 }
 
-bool isBinaryArithOperation(NodeType type){
-    return type == NodeType::addition ||
-        type == NodeType::subtraction ||
-        type == NodeType::multiplication ||
-        type == NodeType::division ||
-        type == NodeType::exponentiation;
+bool isBinaryArithOperation(ExprKind type){
+    return type == ExprKind::addition ||
+        type == ExprKind::subtraction ||
+        type == ExprKind::multiplication ||
+        type == ExprKind::division ||
+        type == ExprKind::exponentiation;
 }
 
-bool isComparisonOperation(NodeType type){
-    return type == NodeType::equality ||
-        type == NodeType::inequality ||
-        type == NodeType::greaterThan ||
-        type == NodeType::greaterEqual ||
-        type == NodeType::lessThan ||
-        type == NodeType::lessEqual;
+bool isComparisonOperation(ExprKind type){
+    return type == ExprKind::equality ||
+        type == ExprKind::inequality ||
+        type == ExprKind::greaterThan ||
+        type == ExprKind::greaterEqual ||
+        type == ExprKind::lessThan ||
+        type == ExprKind::lessEqual;
 }
 
-bool isBinaryLogicOperation(NodeType type){
-    return type == NodeType::conjunction ||
-        type == NodeType::disjunction;
+bool isBinaryLogicOperation(ExprKind type){
+    return type == ExprKind::conjunction ||
+        type == ExprKind::disjunction;
 }
 
 bool SemanticAnalyzer::isAlreadyInScope(const std::string &name){
@@ -108,37 +105,37 @@ Symbol* SemanticAnalyzer::findSymbol(const std::string &name, Scope *scope){
     }
 }
 
-Type& analyzeTuplePattern(AstNode *node){
+Type& analyzeTuplePattern(ExprNode *node){
 
 }
 
-Type* SemanticAnalyzer::analyzeAssignment(AstNode *node){
-    AstNode *lhs = node->as<Assignment>().lhs;
-    AstNode *rhs = node->as<Assignment>().rhs;
+Type* SemanticAnalyzer::analyzeAssignment(ExprNode *node){
+    ExprNode *lhs = node->as<Assignment>().lhs;
+    ExprNode *rhs = node->as<Assignment>().rhs;
 
 }
 
-Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
+Type& SemanticAnalyzer::typeCheckExpr(ExprNode *node){
     node->valueType = &types[NONE_INDEX];
-    if(isPrimary(node->type)){
+    if(isPrimary(node->kind)){
         precomputePrimary(node);
         node->valueType = &getPrimaryType(node);
         return *(node->valueType);
     }
-    if(isBinaryArithOperation(node->type)){
+    if(isBinaryArithOperation(node->kind)){
         Type &left = typeCheckExpr(node->as<BinaryOperation>().left);
         Type &right = typeCheckExpr(node->as<BinaryOperation>().right);
         if(!isArithmeticType(left)){
             emitError(
                 std::string("Arithmetic operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 left.name
             );
         }
         if(!isArithmeticType(right)){
             emitError(
                 std::string("Arithmetic operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 right.name
             );
         }
@@ -150,39 +147,39 @@ Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
         );
         return *(node->valueType); 
     }
-    if(isBinaryLogicOperation(node->type)){
+    if(isBinaryLogicOperation(node->kind)){
         Type &left = typeCheckExpr(node->as<BinaryOperation>().left);
         Type &right = typeCheckExpr(node->as<BinaryOperation>().right);
         if(left.index != BOOL_INDEX){
             emitError(
                 std::string("Logic operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 left.name
             );
         } else if(right.index != BOOL_INDEX){
             emitError(
                 std::string("Logic operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 right.name
             );
         }
         node->valueType = &types[BOOL_INDEX];
         return types[BOOL_INDEX];
     }
-    if(isComparisonOperation(node->type)){
+    if(isComparisonOperation(node->kind)){
         Type &left = typeCheckExpr(node->as<BinaryOperation>().left);
         Type &right = typeCheckExpr(node->as<BinaryOperation>().right);
         if(!isArithmeticType(left)){
             emitError(
                 std::string("Comparison operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 left.name
             );
         }
         if(!isArithmeticType(right)){
             emitError(
                 std::string("Comparison operator ") + 
-                getNodeTypeName(node->type) + " is not supported on type " + 
+                getNodeTypeName(node->kind) + " is not supported on type " + 
                 right.name
             );
         }
@@ -202,14 +199,14 @@ Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
         node->valueType = &types[BOOL_INDEX];
         return types[BOOL_INDEX];
     }
-    switch(node->type){
-    case NodeType::block:
-        for(AstNode *child : node->as<Block>().expressions){
+    switch(node->kind){
+    case ExprKind::block:
+        for(ExprNode *child : node->as<Block>().expressions){
             node->valueType = &typeCheckExpr(child);
         }
         return *(node->valueType);
     break;
-    case NodeType::ifExpr:
+    case ExprKind::ifExpr:
     {
         Type &condition = typeCheckExpr(node->as<IfExpr>().condition);
         if(condition.index != BOOL_INDEX){
@@ -234,7 +231,7 @@ Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
         return *(node->valueType);
     }
     break;
-    case NodeType::structure:
+    case ExprKind::structure:
     {
         std::string &name = node->as<Structure>().name;
         if(isAlreadyInScope(name)){
@@ -246,7 +243,7 @@ Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
             (int)types.size() 
         });
         pushNewScope();
-        for(AstNode *field : node->as<Structure>().fields){
+        for(ExprNode *field : node->as<Structure>().fields){
             if(isAlreadyInScope(field->as<TypedIdentifier>().name)){
                 emitError("Duplicate struct field name");
             }
@@ -285,17 +282,17 @@ Type& SemanticAnalyzer::typeCheckExpr(AstNode *node){
         return types[TYPE_INDEX];
     }
     break;
-    case NodeType::assignment:
+    case ExprKind::assignment:
         analyzeAssignment(node);
     break;
-    case NodeType::fnParamList:
+    case ExprKind::fnParamList:
         throw SystemError("unimplemented", __FILE_NAME__, __LINE__);
-    case NodeType::function:
+    case ExprKind::function:
         throw SystemError("unimplemented", __FILE_NAME__, __LINE__);
         //typeCheckExpr(node->as<Function>().paramList);
     default:
         throw SystemError(std::string("SemanticAnalyzer::typeCheckExpr node type ") + 
-            getNodeTypeName(node->type) + 
+            getNodeTypeName(node->kind) + 
             " is unimplemented", __FILE_NAME__, __LINE__
         );
     }

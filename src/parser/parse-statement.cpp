@@ -4,16 +4,16 @@
 #include "../ast/operator.hpp"
 #include "../ast/print.hpp"
 
-AstNode* Parser::handleBlock(){
-	AstNode *returned = new AstNode(NodeType::block, Block{});
-	AstNode *assignment = tryAssignment();
+ExprNode* Parser::handleBlock(){
+	ExprNode *returned = new ExprNode(ExprKind::block, Block{});
+	ExprNode *assignment = tryAssignment();
 	if(assignment){
 		returned->as<Block>().expressions.push_back(assignment);
 	} else {
 		//std::cout << "FAIL" << std::endl;
 	}
 	while(tokenInd < tokens.size()){
-		AstNode *exp = handleExpression({ TokenType::newline });
+		ExprNode *exp = handleExpression({ TokenType::newline });
 		returned->as<Block>().expressions.push_back(exp);
 		if(discardToken(TokenType::dedent)){
 			break;
@@ -22,14 +22,14 @@ AstNode* Parser::handleBlock(){
 	return returned;
 }
 
-AstNode* Parser::handleStringTemplate(){
-	AstNode *returned = new AstNode(NodeType::stringTemplate, StringTemplate{});
-	AstNode *value = handleExpression({ TokenType::curlyEnd, TokenType::colon });
+ExprNode* Parser::handleStringTemplate(){
+	ExprNode *returned = new ExprNode(ExprKind::stringTemplate, StringTemplate{});
+	ExprNode *value = handleExpression({ TokenType::curlyEnd, TokenType::colon });
 	returned->as<StringTemplate>().value = value;
 	//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
 	if(getPrevToken().type == TokenType::colon){
 		//std::cout << "YES" << std::endl;
-		AstNode *format = handleExpression({ TokenType::curlyEnd });
+		ExprNode *format = handleExpression({ TokenType::curlyEnd });
 		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
 
 		returned->as<StringTemplate>().format = format;
@@ -38,9 +38,9 @@ AstNode* Parser::handleStringTemplate(){
 	return returned;
 }
 
-AstNode* Parser::handleFormatString(){
+ExprNode* Parser::handleFormatString(){
 	expectToken(TokenType::doubleQuote);
-	AstNode *returned = new AstNode(NodeType::formatString, FormatString{});
+	ExprNode *returned = new ExprNode(ExprKind::formatString, FormatString{});
 	bool odd = true;
 	while(tokenInd < tokens.size()){
 		//std::cout << "READ " << getTokenTypeName(getCurToken().type) << std::endl;
@@ -48,14 +48,14 @@ AstNode* Parser::handleFormatString(){
 			break;
 		}
 		if(odd){
-			AstNode *child = new AstNode(
-				NodeType::stringLiteral, 
+			ExprNode *child = new ExprNode(
+				ExprKind::stringLiteral, 
 				StringLiteral{expectToken(TokenType::formatString).text}
 			);
 			returned->as<FormatString>().children.push_back(child);
 		} else {
 			expectToken(TokenType::curlyStart);
-			AstNode *templ = handleStringTemplate();
+			ExprNode *templ = handleStringTemplate();
 			returned->as<FormatString>().children.push_back(templ);
 		}
 		odd = !odd;
@@ -65,46 +65,46 @@ AstNode* Parser::handleFormatString(){
 	return returned;
 }
 
-AstNode* Parser::handleIf(){
-	AstNode *returned = new AstNode(NodeType::ifExpr, IfExpr{});
+ExprNode* Parser::handleIf(){
+	ExprNode *returned = new ExprNode(ExprKind::ifExpr, IfExpr{});
 	expectToken(TokenType::ifKeyword);
-	AstNode *expr = handleExpression({ TokenType::colon });
+	ExprNode *expr = handleExpression({ TokenType::colon });
 	returned->as<IfExpr>().condition = expr;
 	expectToken(TokenType::newline);
 	expectToken(TokenType::indent);	
-	AstNode *ifBlock = handleBlock();
+	ExprNode *ifBlock = handleBlock();
 	returned->as<IfExpr>().ifBlock = ifBlock;
 	while(discardToken(TokenType::elifKeyword)){
 		expr = handleExpression({ TokenType::colon });
 		discardToken(TokenType::newline);
 		returned->as<IfExpr>().elifCondition.push_back(expr);
-		AstNode *elifBlock = handleBlock();
+		ExprNode *elifBlock = handleBlock();
 		returned->as<IfExpr>().elifBlock.push_back(elifBlock);
 	}
 	if(discardToken(TokenType::elseKeyword)){
 		expectToken(TokenType::colon);
 		expectToken(TokenType::newline);
 		expectToken(TokenType::indent);
-		AstNode *elseBlock = handleBlock();
+		ExprNode *elseBlock = handleBlock();
 		returned->as<IfExpr>().elseBlock = elseBlock;
 	}
 	return returned;
 }
 
-AstNode* Parser::handleFnParamList(){
-	AstNode *returned = new AstNode(NodeType::fnParamList, FnParamList{});
+ExprNode* Parser::handleFnParamList(){
+	ExprNode *returned = new ExprNode(ExprKind::fnParamList, FnParamList{});
 	bool usesParen = discardToken(TokenType::parenStart);
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
 		}
-		AstNode *ti;
+		ExprNode *ti;
 		if(ti = tryTypedIdentifier()){
 			returned->as<FnParamList>().params.push_back(ti);
 		} else {
 			Token &name = expectToken(TokenType::identifier);
 			returned->as<FnParamList>().params.push_back(
-				new AstNode(NodeType::identifier, Identifier{name.text})
+				new ExprNode(ExprKind::identifier, Identifier{name.text})
 			);
 		}
 		if(getCurToken().type == TokenType::parenEnd){
@@ -118,25 +118,25 @@ AstNode* Parser::handleFnParamList(){
 	return returned;
 }
 
-AstNode* Parser::handleTypeSyntax(){
-	AstNode *base = createNode(NodeType::identifier);
+ExprNode* Parser::handleTypeSyntax(){
+	ExprNode *base = createNode(ExprKind::identifier);
 	base->as<Identifier>().name = expectToken(TokenType::identifier).text;
-	AstNode *returned = new AstNode(
-		NodeType::type, 
+	ExprNode *returned = new ExprNode(
+		ExprKind::type, 
 		TypeNode{base}
 	);
 	return returned;
 }
 
-AstNode* Parser::handleFn(){
-	AstNode *returned = new AstNode(NodeType::function, Function{});
+ExprNode* Parser::handleFn(){
+	ExprNode *returned = new ExprNode(ExprKind::function, Function{});
 	expectToken(TokenType::fnKeyword);
 	if(getCurToken().type == TokenType::identifier){
 		returned->as<Function>().name = discardToken(TokenType::identifier)->text;
 	} else {
 		returned->as<Function>().name = "<unnamed>";
 	}
-	AstNode *paramList = handleFnParamList();
+	ExprNode *paramList = handleFnParamList();
 	returned->as<Function>().paramList = paramList;
 	if(discardToken(TokenType::arrow)){
 		returned->as<Function>().returnType = handleTypeSyntax();
@@ -144,39 +144,39 @@ AstNode* Parser::handleFn(){
 	expectToken(TokenType::colon);
 	discardToken(TokenType::newline);
 	if(discardToken(TokenType::indent)){
-		AstNode *block = handleBlock();
+		ExprNode *block = handleBlock();
 		returned->as<Function>().block = block;
 	} else {
 		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
-		AstNode *block = handleExpression({ TokenType::newline });
+		ExprNode *block = handleExpression({ TokenType::newline });
 		returned->as<Function>().block = block;
 	}
 	return returned;
 }
 
-AstNode* Parser::handleCallArgsList(){
+ExprNode* Parser::handleCallArgsList(){
 	expectToken(TokenType::parenStart);
-	AstNode *returned = new AstNode(NodeType::callArgsList, CallArgsList{});
+	ExprNode *returned = new ExprNode(ExprKind::callArgsList, CallArgsList{});
 	while(getPrevToken().type != TokenType::parenEnd){
-		AstNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
-		//std::cout << "PB " << getNodeTypeName(arg->type) << std::endl;
+		ExprNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
+		//std::cout << "PB " << ExprKind(arg->type) << std::endl;
 		returned->as<CallArgsList>().args.push_back(arg);
 		//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
 	}
 	return returned;
 }
 
-AstNode* Parser::handleArraySubscript(){
+ExprNode* Parser::handleArraySubscript(){
 	expectToken(TokenType::squareStart);
-	AstNode *returned = new AstNode(NodeType::arraySubscript, ArraySubscript{});
+	ExprNode *returned = new ExprNode(ExprKind::arraySubscript, ArraySubscript{});
 	returned->as<ArraySubscript>().index = handleExpression({ TokenType::squareEnd });
 	return returned;
 }
 
-AstNode* Parser::tryTypedIdentifier(){
+ExprNode* Parser::tryTypedIdentifier(){
 	//std::cout << "ENTER" << std::endl;
 	addCheckpoint();
-	AstNode *returned = new AstNode(NodeType::typedIdentifier, TypedIdentifier{});
+	ExprNode *returned = new ExprNode(ExprKind::typedIdentifier, TypedIdentifier{});
 
 	std::cout << getTokenTypeName(getCurToken().type) << std::endl;
 	if(getCurToken().type == TokenType::identifier){
@@ -197,10 +197,10 @@ AstNode* Parser::tryTypedIdentifier(){
 	return nullptr;
 }
 
-AstNode* Parser::tryAssignment(){
+ExprNode* Parser::tryAssignment(){
 	addCheckpoint();
-	AstNode *returned = new AstNode(NodeType::assignment, Assignment{});
-	AstNode *pattern;
+	ExprNode *returned = new ExprNode(ExprKind::assignment, Assignment{});
+	ExprNode *pattern;
 	if(pattern = tryTuplePattern(TokenType::equal)){
 		returned->as<Assignment>().lhs = pattern;
 		if(pattern = tryTupleExpression(TokenType::newline)){
@@ -217,10 +217,10 @@ AstNode* Parser::tryAssignment(){
 	return returned;
 }
 
-AstNode* Parser::tryTuplePattern(TokenType delimeter){
+ExprNode* Parser::tryTuplePattern(TokenType delimeter){
 	addCheckpoint();
-	AstNode *returned = new AstNode(NodeType::tuplePattern, TuplePattern{});
-	AstNode *iden;
+	ExprNode *returned = new ExprNode(ExprKind::tuplePattern, TuplePattern{});
+	ExprNode *iden;
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == delimeter){
 			tokenInd++;
@@ -228,14 +228,14 @@ AstNode* Parser::tryTuplePattern(TokenType delimeter){
 		}  
 		if(getCurToken().type == TokenType::parenStart){
 			tokenInd++;
-			AstNode *child;
+			ExprNode *child;
 			if(child = tryTuplePattern(TokenType::parenEnd)){
 				returned->as<TuplePattern>().children.push_back(child);
 			}
 		} else if(iden = tryTypedIdentifier()){
 			returned->as<TuplePattern>().children.push_back(iden);
 		} else if(getCurToken().type == TokenType::identifier){
-			AstNode *leaf = new AstNode(NodeType::identifier, Identifier{});
+			ExprNode *leaf = new ExprNode(ExprKind::identifier, Identifier{});
 			leaf->as<Identifier>().name = getCurToken().text;
 			returned->as<TuplePattern>().children.push_back(leaf);
 			tokenInd++;
@@ -249,12 +249,12 @@ AstNode* Parser::tryTuplePattern(TokenType delimeter){
 	return returned;
 }
 
-AstNode* Parser::tryTupleExpression(TokenType delimeter){
+ExprNode* Parser::tryTupleExpression(TokenType delimeter){
 	addCheckpoint();
-	AstNode *returned = new AstNode(NodeType::tupleExpression, TupleExpression{});
+	ExprNode *returned = new ExprNode(ExprKind::tupleExpression, TupleExpression{});
 	while(tokenInd < tokens.size()){
 		//std::cout << "READ " << tokenInd << " "  << getTokenTypeName(getCurToken().type) << std::endl;
-		AstNode *child;
+		ExprNode *child;
 		if(getCurToken().type == delimeter){
 			//std::cout << "STOP" << std::endl;
 			tokenInd++;
@@ -280,16 +280,16 @@ AstNode* Parser::tryTupleExpression(TokenType delimeter){
 	return returned;
 }
 
-AstNode* Parser::handleStruct(){
+ExprNode* Parser::handleStruct(){
 	//std::cout << "Y" << std::endl;
-	AstNode *returned = createNode(NodeType::structure);
+	ExprNode *returned = createNode(ExprKind::structure);
 	expectToken(TokenType::structKeyword);
 	returned->as<Structure>().name = expectToken(TokenType::identifier).text;;
 	expectToken(TokenType::colon);
 	expectToken(TokenType::newline);
 	expectToken(TokenType::indent);
 	while(tokenInd < tokens.size()){
-		AstNode *field;
+		ExprNode *field;
 		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
 		if(field = tryTypedIdentifier()){
 			returned->as<Structure>().fields.push_back(field);
@@ -304,10 +304,10 @@ AstNode* Parser::handleStruct(){
 	return returned;
 }
 
-AstNode* Parser::handleEnum(){
+ExprNode* Parser::handleEnum(){
 
 }
 
-AstNode* Parser::handleMatch(){
+ExprNode* Parser::handleMatch(){
 
 }

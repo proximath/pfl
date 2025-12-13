@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-static void printAAst(AstNode *node, int level = 0){
+static void printAAst(ExprNode *node, int level = 0){
     for(int i = 0; i < 4 * level; i++){
         std::cout << " ";
     }
@@ -12,10 +12,10 @@ static void printAAst(AstNode *node, int level = 0){
         std::cout << "[NULL]" << std::endl;
         return;
     }
-    std::cout << getNodeTypeName(node->type) << " : " << node->valueType->name;
-    if(isOperator(node->type)){
+    std::cout << getNodeTypeName(node->kind) << " : " << node->valueType->name;
+    if(isOperator(node->kind)){
         std::cout << std::endl;
-        if(isBinaryOperator(node->type)){
+        if(isBinaryOperator(node->kind)){
             printAAst(node->as<BinaryOperation>().left, level + 1);
             printAAst(node->as<BinaryOperation>().right, level + 1);
         } else {
@@ -23,57 +23,54 @@ static void printAAst(AstNode *node, int level = 0){
         }
         return;
     } 
-    switch(node->type){
-    case NodeType::identifier:
+    switch(node->kind){
+    case ExprKind::identifier:
         std::cout << std::endl; 
     break;
-    case NodeType::typedIdentifier:
+    case ExprKind::typedIdentifier:
         std::cout << " | " << node->as<TypedIdentifier>().name << std::endl; 
     break;
-    case NodeType::intLiteral:
+    case ExprKind::intLiteral:
         std::cout << " | " << node->as<IntLiteral>().precomputed << std::endl; 
     break;
-    case NodeType::floatLiteral:
+    case ExprKind::floatLiteral:
         std::cout << " | " << node->as<FloatLiteral>().precomputed << std::endl;
     break;
-    case NodeType::stringLiteral:
+    case ExprKind::stringLiteral:
         std::cout << " | " << node->as<StringLiteral>().text << std::endl;
     break;
-    case NodeType::formatString:
+    case ExprKind::formatString:
         std::cout << std::endl;
-        for(AstNode *child : node->as<FormatString>().children){
+        for(ExprNode *child : node->as<FormatString>().children){
             printAAst(child, level + 1);
         }
     break;
-    case NodeType::stringTemplate:
+    case ExprKind::stringTemplate:
         std::cout << std::endl;
         printAAst(node->as<StringTemplate>().value, level + 1);
         printAAst(node->as<StringTemplate>().format, level + 1);
     break;
-    case NodeType::trueLiteral:
-        std::cout << std::endl;
+    case ExprKind::boolLiteral:
+        std::cout << " | " << node->as<BoolLiteral>().text << std::endl;
     break;
-    case NodeType::falseLiteral:
+    case ExprKind::fnParamList:
         std::cout << std::endl;
-    break;
-    case NodeType::fnParamList:
-        std::cout << std::endl;
-        for(AstNode *param : node->as<FnParamList>().params){
+        for(ExprNode *param : node->as<FnParamList>().params){
             printAAst(param, level + 1);
         }
     break;
-    case NodeType::function:
+    case ExprKind::function:
         std::cout << " | " << node->as<Function>().name << std::endl;
         printAAst(node->as<Function>().paramList, level + 1);
         printAAst(node->as<Function>().block, level + 1);
     break;
-    case NodeType::block:
+    case ExprKind::block:
          std::cout << std::endl;
-        for(AstNode *expr : node->as<Block>().expressions){
+        for(ExprNode *expr : node->as<Block>().expressions){
             printAAst(expr, level + 1);
         }   
     break;
-    case NodeType::ifExpr:
+    case ExprKind::ifExpr:
         std::cout << std::endl;
         printAAst(node->as<IfExpr>().condition, level + 1);
         printAAst(node->as<IfExpr>().ifBlock, level + 1);
@@ -83,60 +80,60 @@ static void printAAst(AstNode *node, int level = 0){
         }
         printAAst(node->as<IfExpr>().elseBlock, level + 1);
     break;
-    case NodeType::callArgsList:
+    case ExprKind::callArgsList:
         std::cout << std::endl;
-        for(AstNode *args : node->as<CallArgsList>().args){
+        for(ExprNode *args : node->as<CallArgsList>().args){
             printAAst(args, level + 1);
         }
     break;
-    case NodeType::arrayLiteral:
+    case ExprKind::arrayLiteral:
         std::cout << std::endl;
-        for(AstNode *elem : node->as<ArrayLiteral>().elements){
+        for(ExprNode *elem : node->as<ArrayLiteral>().elements){
             printAAst(elem, level + 1);
         }
     break;
-    case NodeType::arraySubscript:
+    case ExprKind::arraySubscript:
         std::cout << std::endl;
         printAAst(node->as<ArraySubscript>().index, level + 1);
     break;
-    case NodeType::assignment:
+    case ExprKind::assignment:
         std::cout << std::endl;
         printAAst(node->as<Assignment>().lhs, level + 1);
         printAAst(node->as<Assignment>().rhs, level + 1);
     break;
-    case NodeType::tuplePattern:
+    case ExprKind::tuplePattern:
         std::cout << std::endl;
-        for(AstNode *child : node->as<TuplePattern>().children){
+        for(ExprNode *child : node->as<TuplePattern>().children){
             printAAst(child, level + 1);
         }
     break;
-    case NodeType::tupleExpression:
+    case ExprKind::tupleExpression:
         std::cout << std::endl;
-        for(AstNode *child : node->as<TupleExpression>().children){
+        for(ExprNode *child : node->as<TupleExpression>().children){
             printAAst(child, level + 1);
         }
     break;
-    case NodeType::castToInt:
+    case ExprKind::castToInt:
         std::cout << std::endl;
         printAAst(node->as<CastToInt>().expr, level + 1);
     break;
-    case NodeType::castToFloat:
+    case ExprKind::castToFloat:
         std::cout << std::endl;
         printAAst(node->as<CastToFloat>().expr, level + 1);
     break;
-    case NodeType::type:
+    case ExprKind::type:
         std::cout << std::endl;
         printAAst(node->as<TypeNode>().base, level + 1);
     break;
-    case NodeType::structure:
+    case ExprKind::structure:
         std::cout << " | " << node->as<Structure>().name << std::endl;
-        for(AstNode *field : node->as<Structure>().fields){
+        for(ExprNode *field : node->as<Structure>().fields){
             printAAst(field, level + 1);
         }
     break;
     default:
         throw SystemError(std::string("printAAst node type ") +
-            getNodeTypeName(node->type) +  " is unimplemented", 
+            getNodeTypeName(node->kind) +  " is unimplemented", 
             __FILE_NAME__, __LINE__);
     }
 }

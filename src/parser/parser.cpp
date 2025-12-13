@@ -5,11 +5,11 @@
 
 #include <algorithm>
 
-AstNode* Parser::handleArrayLiteral(){
+ExprNode* Parser::handleArrayLiteral(){
 	expectToken(TokenType::squareStart);
-	AstNode *returned = new AstNode(NodeType::arrayLiteral, ArrayLiteral{});
+	ExprNode *returned = new ExprNode(ExprKind::arrayLiteral, ArrayLiteral{});
 	while(getPrevToken().type != TokenType::squareEnd){
-		AstNode *elem = handleExpression({ TokenType::comma, TokenType::squareEnd });
+		ExprNode *elem = handleExpression({ TokenType::comma, TokenType::squareEnd });
 		returned->as<ArrayLiteral>().elements.push_back(elem);
 		if(getCurToken().type == TokenType::squareEnd){
 			break;
@@ -77,16 +77,16 @@ void Parser::commitCheckpoint(){
 	checkpoint.pop_back();
 }
 
-AstNode* Parser::parse(std::vector<Token> tokenStream){
+ExprNode* Parser::parse(std::vector<Token> tokenStream){
 	tokens.insert(tokens.end(), tokenStream.begin(), tokenStream.end());
-	AstNode *root = new AstNode(NodeType::block, Block{});
+	ExprNode *root = new ExprNode(ExprKind::block, Block{});
 	while(tokenInd < tokens.size()){
-		AstNode *assignment = tryAssignment();
+		ExprNode *assignment = tryAssignment();
 		if(assignment){
 			root->as<Block>().expressions.push_back(assignment);
 			continue;
 		}
-		AstNode *exp = handleExpression({ TokenType::newline });	
+		ExprNode *exp = handleExpression({ TokenType::newline });	
 		root->as<Block>().expressions.push_back(exp);
 	}
 	//std::cout << "Finished parsing" << std::endl;
