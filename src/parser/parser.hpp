@@ -16,10 +16,10 @@ private:
     Token& expectToken(TokenType, const char *);
     Token* discardToken(TokenType);
     Token* tryToken(TokenType);
-    ExprNode* handleFnParamList();
+    void handleFnParamList(Function*);
     ExprNode* handleBlock();
     ExprNode* handleFn();
-    ExprNode* handleTypeSyntax();
+    TypeNode* handleTypeNode();
     ExprNode* handleIf();
     ExprNode* handleCallArgsList();
     ExprNode* handleArrayLiteral();
@@ -30,10 +30,11 @@ private:
     ExprNode* handleStruct();
     ExprNode* handleEnum();
     ExprNode* handleMatch();
-    ExprNode* tryTuplePattern(TokenType);
+    TuplePatternBase* tryTuplePattern(TokenType);
     ExprNode* tryTupleExpression(TokenType);
     ExprNode* tryAssignment();
     ExprNode* tryTypedIdentifier();
+    void handleGenericDecl(Structure*);
     void emitError(const std::string&);
     void popOperatorStack(std::vector<ExprNode*>&, ExprNode*&, ExprNode*&);
     void addCheckpoint();

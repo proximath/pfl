@@ -91,8 +91,7 @@ ExprNode* Parser::handleIf(){
 	return returned;
 }
 
-ExprNode* Parser::handleFnParamList(){
-	ExprNode *returned = new ExprNode(ExprKind::fnParamList, FnParamList{});
+void Parser::handleFnParamList(Function *fn){
 	bool usesParen = discardToken(TokenType::parenStart);
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == TokenType::parenEnd){
@@ -100,10 +99,10 @@ ExprNode* Parser::handleFnParamList(){
 		}
 		ExprNode *ti;
 		if(ti = tryTypedIdentifier()){
-			returned->as<FnParamList>().params.push_back(ti);
+			fn->params.push_back(ti);
 		} else {
 			Token &name = expectToken(TokenType::identifier);
-			returned->as<FnParamList>().params.push_back(
+			fn->params.push_back(
 				new ExprNode(ExprKind::identifier, Identifier{name.text})
 			);
 		}
@@ -115,16 +114,40 @@ ExprNode* Parser::handleFnParamList(){
 	if(usesParen){
 		expectToken(TokenType::parenEnd);
 	}
-	return returned;
 }
 
-ExprNode* Parser::handleTypeSyntax(){
-	ExprNode *base = createNode(ExprKind::identifier);
-	base->as<Identifier>().name = expectToken(TokenType::identifier).text;
-	ExprNode *returned = new ExprNode(
-		ExprKind::type, 
-		TypeNode{base}
-	);
+void Parser::handleGenericDecl(Structure *structure){
+	bool first = true;
+	while(tokenInd < tokens.size()){
+		if(!first){
+			expectToken(TokenType::comma);
+		}
+		first = false;
+		structure->generics.push_back(expectToken(TokenType::identifier).text);
+		if(getCurToken().type == TokenType::squareEnd){
+			tokenInd++;
+			break;
+		}
+	}
+}
+
+TypeNode* Parser::handleTypeNode(){
+	TypeNode *returned = new TypeNode;
+	returned->main = expectToken(TokenType::identifier).text;
+	if(discardToken(TokenType::squareStart)){
+		bool first = true;
+		while(tokenInd < tokens.size()){
+			if(!first){
+				expectToken(TokenType::comma);
+			}
+			first = false;
+			returned->generics.push_back(handleTypeNode());
+			if(getCurToken().type == TokenType::squareEnd){
+				tokenInd++;
+				break;
+			} 
+		}
+	}
 	return returned;
 }
 
@@ -136,10 +159,9 @@ ExprNode* Parser::handleFn(){
 	} else {
 		returned->as<Function>().name = "<unnamed>";
 	}
-	ExprNode *paramList = handleFnParamList();
-	returned->as<Function>().paramList = paramList;
+	handleFnParamList(returned->pun<Function>());
 	if(discardToken(TokenType::arrow)){
-		returned->as<Function>().returnType = handleTypeSyntax();
+		returned->as<Function>().returnType = handleTypeNode();
 	}
 	expectToken(TokenType::colon);
 	discardToken(TokenType::newline);
@@ -200,11 +222,12 @@ ExprNode* Parser::tryTypedIdentifier(){
 ExprNode* Parser::tryAssignment(){
 	addCheckpoint();
 	ExprNode *returned = new ExprNode(ExprKind::assignment, Assignment{});
-	ExprNode *pattern;
+	TuplePatternBase *pattern;
 	if(pattern = tryTuplePattern(TokenType::equal)){
 		returned->as<Assignment>().lhs = pattern;
-		if(pattern = tryTupleExpression(TokenType::newline)){
-			returned->as<Assignment>().rhs = pattern;
+		ExprNode *expr;
+		if(expr = tryTupleExpression(TokenType::newline)){
+			returned->as<Assignment>().rhs = expr;
 		} else {
 			emitError("Expected an expression after equal sign");
 		}
@@ -217,10 +240,9 @@ ExprNode* Parser::tryAssignment(){
 	return returned;
 }
 
-ExprNode* Parser::tryTuplePattern(TokenType delimeter){
+TuplePatternBase* Parser::tryTuplePattern(TokenType delimeter){
 	addCheckpoint();
-	ExprNode *returned = new ExprNode(ExprKind::tuplePattern, TuplePattern{});
-	ExprNode *iden;
+	TuplePatternBase *returned = new TuplePatternNode;
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == delimeter){
 			tokenInd++;
@@ -228,17 +250,18 @@ ExprNode* Parser::tryTuplePattern(TokenType delimeter){
 		}  
 		if(getCurToken().type == TokenType::parenStart){
 			tokenInd++;
-			ExprNode *child;
+			TuplePatternBase *child;
 			if(child = tryTuplePattern(TokenType::parenEnd)){
-				returned->as<TuplePattern>().children.push_back(child);
+				returned->asNode()->children.push_back(child);
 			}
-		} else if(iden = tryTypedIdentifier()){
-			returned->as<TuplePattern>().children.push_back(iden);
 		} else if(getCurToken().type == TokenType::identifier){
-			ExprNode *leaf = new ExprNode(ExprKind::identifier, Identifier{});
-			leaf->as<Identifier>().name = getCurToken().text;
-			returned->as<TuplePattern>().children.push_back(leaf);
-			tokenInd++;
+			TuplePatternLeaf *leaf = new TuplePatternLeaf;
+			leaf->isLeaf = true;
+			leaf->name = expectToken(TokenType::identifier).text;
+			if(discardToken(TokenType::colon)){
+				leaf->type = handleTypeNode();
+			}
+			returned->asNode()->children.push_back(leaf);
 		} else {
 			restoreCheckpoint();
 			return nullptr;
@@ -285,6 +308,9 @@ ExprNode* Parser::handleStruct(){
 	ExprNode *returned = createNode(ExprKind::structure);
 	expectToken(TokenType::structKeyword);
 	returned->as<Structure>().name = expectToken(TokenType::identifier).text;;
+	if(discardToken(TokenType::squareStart)){
+		handleGenericDecl(returned->pun<Structure>());
+	}
 	expectToken(TokenType::colon);
 	expectToken(TokenType::newline);
 	expectToken(TokenType::indent);

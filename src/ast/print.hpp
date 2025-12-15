@@ -3,10 +3,11 @@
 
 #include <iostream>
 
+static void printAst(TypeNode *, int);
+static void printAst(TuplePatternBase *, int);
+
 static void printAst(ExprNode *node, int level = 0){
-    for(int i = 0; i < 4 * level; i++){
-        std::cout << " ";
-    }
+    printSpace(level);
     if(node == nullptr){
         std::cout << "[NULL]" << std::endl;
         return;
@@ -54,15 +55,14 @@ static void printAst(ExprNode *node, int level = 0){
     case ExprKind::boolLiteral:
         std::cout << node->as<BoolLiteral>().text << std::endl;
     break;
-    case ExprKind::fnParamList:
-        std::cout << std::endl;
-        for(ExprNode *param : node->as<FnParamList>().params){
-            printAst(param, level + 1);
-        }
-    break;
     case ExprKind::function:
         std::cout << " | " << node->as<Function>().name << std::endl;
-        printAst(node->as<Function>().paramList, level + 1);
+        printSpace(level + 1);
+        std::cout << ".params:" << std::endl;
+        for(ExprNode *param : node->as<Function>().params){
+            printSpace(level + 2);    
+            std::cout << param->as<TypedIdentifier>().name << " " << param->as<TypedIdentifier>().type << std::endl;
+        }
         printAst(node->as<Function>().returnType, level + 1);
         printAst(node->as<Function>().block, level + 1);
     break;
@@ -103,24 +103,22 @@ static void printAst(ExprNode *node, int level = 0){
         printAst(node->as<Assignment>().lhs, level + 1);
         printAst(node->as<Assignment>().rhs, level + 1);
     break;
-    case ExprKind::tuplePattern:
-        std::cout << std::endl;
-        for(ExprNode *child : node->as<TuplePattern>().children){
-            printAst(child, level + 1);
-        }
-    break;
     case ExprKind::tupleExpression:
         std::cout << std::endl;
         for(ExprNode *child : node->as<TupleExpression>().children){
             printAst(child, level + 1);
         }
     break;
-    case ExprKind::type:
-        std::cout << std::endl;
-        printAst(node->as<TypeNode>().base, level + 1);
-    break;
     case ExprKind::structure:
         std::cout << " | " << node->as<Structure>().name << std::endl;
+        printSpace(level + 1);
+        std::cout << ".generics:" << std::endl;
+        for(std::string &field : node->as<Structure>().generics){
+            printSpace(level + 2);
+            std::cout << field << std::endl;
+        }
+        printSpace(level + 1);
+        std::cout << ".fields:" << std::endl;
         for(ExprNode *field : node->as<Structure>().fields){
             printAst(field, level + 1);
         }
@@ -129,5 +127,29 @@ static void printAst(ExprNode *node, int level = 0){
         throw SystemError(std::string("printAst node kind ") +
             getNodeTypeName(node->kind) +  " is unimplemented", 
             __FILE_NAME__, __LINE__);
+    }
+}
+
+static void printAst(TypeNode *type, int level){
+    printSpace(level); 
+    std::cout << type->main << std::endl;
+    if(!type->generics.empty()){
+        for(TypeNode *gen : type->generics){
+            printAst(gen, level + 1);
+        }
+    }
+}
+
+static void printAst(TuplePatternBase *pattern, int level){
+    printSpace(level);
+    if(pattern->isLeaf){
+        std::cout << "tuplePatternLeaf | ";
+        std::cout << pattern->asLeaf()->name << std::endl;
+        printAst(pattern->asLeaf()->type, level + 1);
+    } else {
+        std::cout << "tuplePattern" << std::endl;
+        for(TuplePatternBase *child : pattern->asNode()->children){
+            printAst(child, level + 1);
+        }
     }
 }

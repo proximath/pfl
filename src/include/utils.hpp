@@ -54,5 +54,9 @@ public:
     }
 };
 
-
+static void printSpace(int level){
+    for(int i = 0; i < 4 * level; i++){
+        std::cout << " ";
+    }
+}
 

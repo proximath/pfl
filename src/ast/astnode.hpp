@@ -21,16 +21,14 @@ enum class ExprKind {
     // Comparisan
     equality, inequality, lessThan, greaterThan, lessEqual, greaterEqual,
     // Function
-    function, fnParamList, callArgsList, call,
+    function, callArgsList, call,
     // Statement-like
     ifExpr, forExpr,
     memberAccess,
     arrayLiteral, arrayAccess, arraySubscript,
-    tuplePattern,
     tupleExpression,
     typedIdentifier,
     castToInt, castToFloat,
-    type,
     structure, enumeration,
     matchExpr,
 };
@@ -63,7 +61,6 @@ static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
     { ExprKind::greaterEqual, "greaterEqual" },
     { ExprKind::memberAccess, "memberAccess" },
     { ExprKind::function, "function" },
-    { ExprKind::fnParamList, "fnParamList" },
     { ExprKind::block, "block" },
     { ExprKind::ifExpr, "ifExpr" },
     { ExprKind::call, "call" },
@@ -72,11 +69,9 @@ static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
     { ExprKind::arrayLiteral, "arrayLiteral" },
     { ExprKind::arrayAccess, "arrayAccess" },
     { ExprKind::arraySubscript, "arraySubscript" },
-    { ExprKind::tuplePattern, "tuplePattern" },
     { ExprKind::tupleExpression, "tupleExpression" },
     { ExprKind::castToInt, "castToInt" },
     { ExprKind::castToFloat, "castToFloat" },
-    { ExprKind::type, "type" },
     { ExprKind::structure, "structure" },
     { ExprKind::enumeration, "enumeration" },
     { ExprKind::matchExpr, "matchExpr" },
@@ -84,6 +79,11 @@ static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
 
 class ExprNode;
 class Type;
+
+struct TypeNode {
+    std::string main;
+    std::vector<TypeNode*> generics;
+};
 
 struct BinaryOperation {
     ExprNode *left;
@@ -137,19 +137,11 @@ struct TypedIdentifier {
     std::string type; // Be careful if you decided to add Type<T> later
 };
 
-struct FnParamList {
-    std::vector<ExprNode*> params;
-};
-
 struct Function {
     std::string name;
-    ExprNode *paramList;
-    ExprNode *returnType;
+    std::vector<ExprNode*> params;
+    TypeNode *returnType;
     ExprNode *block;
-};
-
-struct TypeNode {
-    ExprNode* base;
 };
 
 struct Block {
@@ -174,13 +166,31 @@ struct ArrayLiteral {
     std::vector<ExprNode*> elements;
 };
 
-struct Assignment {
-    ExprNode *lhs;
-    ExprNode *rhs;
+struct TuplePatternLeaf;
+struct TuplePatternNode;
+
+struct TuplePatternBase {
+    bool isLeaf = false;
+    TuplePatternNode* asNode(){
+        return reinterpret_cast<TuplePatternNode*>(this);
+    }
+    TuplePatternLeaf* asLeaf(){
+        return reinterpret_cast<TuplePatternLeaf*>(this);
+    }
 };
 
-struct TuplePattern {
-    std::vector<ExprNode*> children;
+struct TuplePatternLeaf : TuplePatternBase{
+    std::string name;
+    TypeNode *type;
+};
+
+struct TuplePatternNode : TuplePatternBase {
+    std::vector<TuplePatternBase*> children;
+};
+
+struct Assignment {
+    TuplePatternBase *lhs;
+    ExprNode *rhs;
 };
 
 struct TupleExpression {
@@ -206,6 +216,7 @@ struct CastToFloat {
 struct Structure {
     std::string name;
     std::vector<ExprNode*> fields;
+    std::vector<std::string> generics;
     std::vector<ExprNode*> methods;
 };
 
@@ -232,19 +243,16 @@ struct ExprNode {
         UnaryOperation,
         VariableDeclaration,
         Function,
-        FnParamList,
         Block,
         IfExpr,
         ForExpr,
         CallArgsList,
         ArrayLiteral,
         Assignment,
-        TuplePattern,
         TupleExpression,
         ArraySubscript,
         CastToInt,
         CastToFloat,
-        TypeNode,
         Structure,
         Enumeration,
         MatchExpr
@@ -259,6 +267,10 @@ struct ExprNode {
     template<typename T>
     T& as(){
         return std::get<T>(data);
+    }
+    template<typename T>
+    T* pun(){
+        return &std::get<T>(data);
     }
 };
 
@@ -298,8 +310,6 @@ static ExprNode* createNode(ExprKind type){
     case ExprKind::greaterEqual: return new ExprNode(type, BinaryOperation{});
     case ExprKind::memberAccess: return new ExprNode(type, BinaryOperation{});
     case ExprKind::function: return new ExprNode(type, Function{});
-    case ExprKind::type: return new ExprNode(type, TypeNode{});
-    case ExprKind::fnParamList: return new ExprNode(type, FnParamList{});
     case ExprKind::block: return new ExprNode(type, Block{});
     case ExprKind::ifExpr: return new ExprNode(type, IfExpr{});
     case ExprKind::call: return new ExprNode(type, BinaryOperation{});
@@ -308,7 +318,6 @@ static ExprNode* createNode(ExprKind type){
     case ExprKind::arrayLiteral: return new ExprNode(type, ArrayLiteral{});
     case ExprKind::arrayAccess: return new ExprNode(type, BinaryOperation{});
     case ExprKind::arraySubscript: return new ExprNode(type, ArraySubscript{});
-    case ExprKind::tuplePattern: return new ExprNode(type, TuplePattern{});
     case ExprKind::tupleExpression: return new ExprNode(type, TupleExpression{});
     case ExprKind::castToInt: return new ExprNode(type, CastToInt{});
     case ExprKind::castToFloat: return new ExprNode(type, CastToFloat{});

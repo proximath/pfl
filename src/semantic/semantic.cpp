@@ -110,7 +110,7 @@ Type& analyzeTuplePattern(ExprNode *node){
 }
 
 Type* SemanticAnalyzer::analyzeAssignment(ExprNode *node){
-    ExprNode *lhs = node->as<Assignment>().lhs;
+    TuplePatternBase *lhs = node->as<Assignment>().lhs;
     ExprNode *rhs = node->as<Assignment>().rhs;
 
 }
@@ -285,8 +285,6 @@ Type& SemanticAnalyzer::typeCheckExpr(ExprNode *node){
     case ExprKind::assignment:
         analyzeAssignment(node);
     break;
-    case ExprKind::fnParamList:
-        throw SystemError("unimplemented", __FILE_NAME__, __LINE__);
     case ExprKind::function:
         throw SystemError("unimplemented", __FILE_NAME__, __LINE__);
         //typeCheckExpr(node->as<Function>().paramList);
