@@ -232,55 +232,55 @@ Type& SemanticAnalyzer::typeCheckExpr(ExprNode *node){
     }
     break;
     case ExprKind::structure:
-    {
-        std::string &name = node->as<Structure>().name;
-        if(isAlreadyInScope(name)){
-            emitError("Reusing name that has been previously defined");
-        }
-        types.push_back(Type{ 
-            name,
-            false, 
-            (int)types.size() 
-        });
-        pushNewScope();
-        for(ExprNode *field : node->as<Structure>().fields){
-            if(isAlreadyInScope(field->as<TypedIdentifier>().name)){
-                emitError("Duplicate struct field name");
-            }
-            Symbol *symbol = findSymbol(field->as<TypedIdentifier>().type, curScope);
-            if(!symbol){
-                emitError(std::string("Type ") + field->as<TypedIdentifier>().type + " does not exist");
-            }
-            if(!isType(*symbol)){
-                emitError("Cannot use non-type symbol as type");
-            }
-            Type &type = *(symbol->type);
-            curScope->symbolTable.insert({ 
-                field->as<TypedIdentifier>().name, 
-                Symbol{ 
-                    field->as<TypedIdentifier>().name, 
-                    SymbolKind::attribute, 
-                    &type 
-                }
-            });
-            types.back().attributes.insert({ 
-                field->as<TypedIdentifier>().name,
-                &type
-            });
-            field->valueType = &type;
-        }
-        popScope();
-        curScope->symbolTable.insert({ 
-            name,
-            Symbol{ 
-                name,
-                SymbolKind::structure, 
-                &types.back() 
-            }
-        });
-        node->valueType = &types[TYPE_INDEX];
-        return types[TYPE_INDEX];
-    }
+    // {
+    //     std::string &name = node->as<Structure>().name;
+    //     if(isAlreadyInScope(name)){
+    //         emitError("Reusing name that has been previously defined");
+    //     }
+    //     types.push_back(Type{ 
+    //         name,
+    //         false, 
+    //         (int)types.size() 
+    //     });
+    //     pushNewScope();
+    //     for(StructAttribute *attr : node->as<Structure>().attributes){
+    //         if(isAlreadyInScope(attr->name)){
+    //             emitError("Duplicate struct field name");
+    //         }
+    //         Symbol *symbol = findSymbol(attr->type, curScope);
+    //         if(!symbol){
+    //             emitError(std::string("Type ") + field->type + " does not exist");
+    //         }
+    //         if(!isType(*symbol)){
+    //             emitError("Cannot use non-type symbol as type");
+    //         }
+    //         Type &type = *(symbol->type);
+    //         curScope->symbolTable.insert({ 
+    //             field->as<TypedIdentifier>().name, 
+    //             Symbol{ 
+    //                 field->as<TypedIdentifier>().name, 
+    //                 SymbolKind::attribute, 
+    //                 &type 
+    //             }
+    //         });
+    //         types.back().attributes.insert({ 
+    //             field->as<TypedIdentifier>().name,
+    //             &type
+    //         });
+    //         field->valueType = &type;
+    //     }
+    //     popScope();
+    //     curScope->symbolTable.insert({ 
+    //         name,
+    //         Symbol{ 
+    //             name,
+    //             SymbolKind::structure, 
+    //             &types.back() 
+    //         }
+    //     });
+    //     node->valueType = &types[TYPE_INDEX];
+    //     return types[TYPE_INDEX];
+    // }
     break;
     case ExprKind::assignment:
         analyzeAssignment(node);

@@ -137,9 +137,14 @@ struct TypedIdentifier {
     std::string type; // Be careful if you decided to add Type<T> later
 };
 
+struct FunctionParam {
+    std::string name;
+    TypeNode *type;
+};
+
 struct Function {
     std::string name;
-    std::vector<ExprNode*> params;
+    std::vector<FunctionParam*> params;
     TypeNode *returnType;
     ExprNode *block;
 };
@@ -154,12 +159,6 @@ struct IfExpr {
     std::vector<ExprNode*> elifCondition;
     std::vector<ExprNode*> elifBlock;
     ExprNode *elseBlock;
-};
-
-struct ForExpr {
-    ExprNode *pattern;
-    ExprNode *expr;
-    ExprNode *block;
 };
 
 struct ArrayLiteral {
@@ -213,11 +212,25 @@ struct CastToFloat {
     ExprNode *expr;
 };
 
+struct StructAttribute {
+    std::string name;
+    TypeNode *type;
+    ExprNode *defaultValue;
+    bool isPublic;
+};
+
+struct StructMethod {
+    std::string name;
+    std::vector<FunctionParam*> params;
+    TypeNode* returnType;
+    ExprNode* block;
+};
+
 struct Structure {
     std::string name;
-    std::vector<ExprNode*> fields;
+    std::vector<StructAttribute*> attributes;
     std::vector<std::string> generics;
-    std::vector<ExprNode*> methods;
+    std::vector<StructMethod*> methods;
 };
 
 struct Enumeration {
@@ -245,7 +258,6 @@ struct ExprNode {
         Function,
         Block,
         IfExpr,
-        ForExpr,
         CallArgsList,
         ArrayLiteral,
         Assignment,
@@ -314,7 +326,6 @@ static ExprNode* createNode(ExprKind type){
     case ExprKind::ifExpr: return new ExprNode(type, IfExpr{});
     case ExprKind::call: return new ExprNode(type, BinaryOperation{});
     case ExprKind::callArgsList: return new ExprNode(type, CallArgsList{});
-    case ExprKind::forExpr: return new ExprNode(type, ForExpr{});
     case ExprKind::arrayLiteral: return new ExprNode(type, ArrayLiteral{});
     case ExprKind::arrayAccess: return new ExprNode(type, BinaryOperation{});
     case ExprKind::arraySubscript: return new ExprNode(type, ArraySubscript{});

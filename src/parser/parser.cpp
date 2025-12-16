@@ -45,12 +45,21 @@ Token* Parser::discardToken(TokenType type){
 
 Token& Parser::expectToken(TokenType type){
 	if(getCurToken().type != type){
-		emitError(std::string("Expected token " + getTokenTypeName(type)));
+		emitError(std::string(
+			"Expected token " + 
+			getTokenTypeName(type) + 
+			" on (" + 
+			std::to_string(getCurToken().line_num) + 
+			", " + 
+			std::to_string(getCurToken().column_num) +
+			")"
+			)
+		);
 	}
 	return tokens[tokenInd++];
 }
 
-Token& Parser::expectToken(TokenType type, const char *msg){
+Token& Parser::expectToken(TokenType type, const std::string &msg){
 	if(getCurToken().type != type){
 		emitError(msg);
 	}
@@ -62,6 +71,10 @@ Token* Parser::tryToken(TokenType type){
 		return &(tokens[tokenInd]);
 	}
 	return nullptr;
+}
+
+bool Parser::isCurToken(TokenType type){
+	return getCurToken().type == type;
 }
 
 void Parser::addCheckpoint(){
@@ -89,6 +102,5 @@ ExprNode* Parser::parse(std::vector<Token> tokenStream){
 		ExprNode *exp = handleExpression({ TokenType::newline });	
 		root->as<Block>().expressions.push_back(exp);
 	}
-	//std::cout << "Finished parsing" << std::endl;
 	return root;
 }

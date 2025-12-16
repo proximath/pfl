@@ -13,9 +13,11 @@ private:
     Token& getPrevToken();
     Token& getCurToken();
     Token& expectToken(TokenType);
-    Token& expectToken(TokenType, const char *);
+    Token& expectToken(TokenType, const std::string&);
     Token* discardToken(TokenType);
     Token* tryToken(TokenType);
+    bool isCurToken(TokenType);
+    FunctionParam* handleFnParam();
     void handleFnParamList(Function*);
     ExprNode* handleBlock();
     ExprNode* handleFn();
@@ -27,6 +29,8 @@ private:
     ExprNode* handleStringTemplate();
     ExprNode* handleFormatString();
     ExprNode* handleExpression(std::vector<TokenType>);
+    StructMethod* handleStructMethod();
+    StructAttribute* handleStructAttribute();
     ExprNode* handleStruct();
     ExprNode* handleEnum();
     ExprNode* handleMatch();

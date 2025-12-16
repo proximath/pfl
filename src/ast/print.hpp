@@ -5,6 +5,7 @@
 
 static void printAst(TypeNode *, int);
 static void printAst(TuplePatternBase *, int);
+static void printAst(StructMethod *, int);
 
 static void printAst(ExprNode *node, int level = 0){
     printSpace(level);
@@ -59,9 +60,10 @@ static void printAst(ExprNode *node, int level = 0){
         std::cout << " | " << node->as<Function>().name << std::endl;
         printSpace(level + 1);
         std::cout << ".params:" << std::endl;
-        for(ExprNode *param : node->as<Function>().params){
+        for(FunctionParam *param : node->as<Function>().params){
             printSpace(level + 2);    
-            std::cout << param->as<TypedIdentifier>().name << " " << param->as<TypedIdentifier>().type << std::endl;
+            std::cout << "functionParam | " << param->name << std::endl;
+            printAst(param->type, level + 3);
         }
         printAst(node->as<Function>().returnType, level + 1);
         printAst(node->as<Function>().block, level + 1);
@@ -117,10 +119,13 @@ static void printAst(ExprNode *node, int level = 0){
             printSpace(level + 2);
             std::cout << field << std::endl;
         }
-        printSpace(level + 1);
-        std::cout << ".fields:" << std::endl;
-        for(ExprNode *field : node->as<Structure>().fields){
-            printAst(field, level + 1);
+        for(StructAttribute *attr : node->as<Structure>().attributes){
+            printSpace(level + 1);
+            std::cout << "structAttribute | " << attr->name << std::endl;
+            printAst(attr->type, level + 2);
+        }
+        for(StructMethod *method : node->as<Structure>().methods){
+            printAst(method, level + 1);
         }
     break;
     default:
@@ -131,8 +136,11 @@ static void printAst(ExprNode *node, int level = 0){
 }
 
 static void printAst(TypeNode *type, int level){
+    if(type == nullptr){
+        return;
+    }
     printSpace(level); 
-    std::cout << type->main << std::endl;
+    std::cout << "typeNode | " << type->main << std::endl;
     if(!type->generics.empty()){
         for(TypeNode *gen : type->generics){
             printAst(gen, level + 1);
@@ -141,6 +149,9 @@ static void printAst(TypeNode *type, int level){
 }
 
 static void printAst(TuplePatternBase *pattern, int level){
+    if(pattern == nullptr){
+        return;
+    }
     printSpace(level);
     if(pattern->isLeaf){
         std::cout << "tuplePatternLeaf | ";
@@ -152,4 +163,21 @@ static void printAst(TuplePatternBase *pattern, int level){
             printAst(child, level + 1);
         }
     }
+}
+
+static void printAst(StructMethod *method, int level){
+    if(method == nullptr){
+        return;
+    }
+    printSpace(level);
+    std::cout << "structMethod | " << method->name << std::endl;
+    printSpace(level + 1);
+    std::cout << ".params:" << std::endl;
+    for(FunctionParam *param : method->params){
+        printSpace(level + 2);    
+        std::cout << "functionParam | " << param->name << std::endl;
+        printAst(param->type, level + 3);
+    }
+    printAst(method->returnType, level + 1);
+    printAst(method->block, level + 1);
 }

@@ -91,29 +91,27 @@ ExprNode* Parser::handleIf(){
 	return returned;
 }
 
+FunctionParam* Parser::handleFnParam(){
+	FunctionParam *param = new FunctionParam;
+	param->name = expectToken(TokenType::identifier).text;
+	if(discardToken(TokenType::colon)){
+		param->type = handleTypeNode();
+	}
+	return param;
+}
+
 void Parser::handleFnParamList(Function *fn){
-	bool usesParen = discardToken(TokenType::parenStart);
 	while(tokenInd < tokens.size()){
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
 		}
-		ExprNode *ti;
-		if(ti = tryTypedIdentifier()){
-			fn->params.push_back(ti);
-		} else {
-			Token &name = expectToken(TokenType::identifier);
-			fn->params.push_back(
-				new ExprNode(ExprKind::identifier, Identifier{name.text})
-			);
-		}
+		fn->params.push_back(handleFnParam());
 		if(getCurToken().type == TokenType::parenEnd){
 			break;
 		}
 		expectToken(TokenType::comma);
 	}
-	if(usesParen){
-		expectToken(TokenType::parenEnd);
-	}
+	expectToken(TokenType::parenEnd);
 }
 
 void Parser::handleGenericDecl(Structure *structure){
@@ -303,6 +301,42 @@ ExprNode* Parser::tryTupleExpression(TokenType delimeter){
 	return returned;
 }
 
+StructMethod* Parser::handleStructMethod(){
+	StructMethod *method = new StructMethod;
+	while(tokenInd < tokens.size()){
+		if(getCurToken().type == TokenType::parenEnd){
+			break;
+		}
+		method->params.push_back(handleFnParam());
+		if(getCurToken().type == TokenType::parenEnd){
+			break;
+		}
+		expectToken(TokenType::comma);
+	}
+	expectToken(TokenType::parenEnd);
+	if(discardToken(TokenType::arrow)){
+		method->returnType = handleTypeNode();
+	}
+	expectToken(TokenType::colon);
+	discardToken(TokenType::newline);
+	if(discardToken(TokenType::indent)){
+		ExprNode *block = handleBlock();
+		method->block = block;
+	} else {
+		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
+		ExprNode *block = handleExpression({ TokenType::newline });
+		method->block = block;
+	}
+	return method;
+}
+
+StructAttribute* Parser::handleStructAttribute(){
+	StructAttribute *attr = new StructAttribute;
+	expectToken(TokenType::colon);
+	attr->type = handleTypeNode();
+	return attr;	
+}
+
 ExprNode* Parser::handleStruct(){
 	//std::cout << "Y" << std::endl;
 	ExprNode *returned = createNode(ExprKind::structure);
@@ -315,17 +349,22 @@ ExprNode* Parser::handleStruct(){
 	expectToken(TokenType::newline);
 	expectToken(TokenType::indent);
 	while(tokenInd < tokens.size()){
-		ExprNode *field;
 		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
-		if(field = tryTypedIdentifier()){
-			returned->as<Structure>().fields.push_back(field);
-			discardToken(TokenType::newline);
-			continue;
+		std::string name = expectToken(TokenType::identifier, 
+			std::string("Unexpected token ") + getTokenTypeName(getCurToken().type)).text;
+		if(discardToken(TokenType::parenStart)){
+			StructMethod *method = handleStructMethod();
+			method->name = name;
+			returned->as<Structure>().methods.push_back(method);
+		} else {
+			StructAttribute *attr = handleStructAttribute();
+			attr->name = name;
+			returned->as<Structure>().attributes.push_back(attr);
 		}
+		discardToken(TokenType::newline);
 		if(discardToken(TokenType::dedent)){
 			break;
 		}
-		throw SystemError("Methods not implemented", __FILE_NAME__, __LINE__);
 	}
 	return returned;
 }
