@@ -34,7 +34,8 @@ static std::unordered_map<std::string, TokenType> symbolLookup = {
     { "->",  TokenType::arrow },
     { "\'", TokenType::quote },
     { "\"", TokenType::doubleQuote },
-    { "`",  TokenType::backTick }
+    { "`",  TokenType::backTick },
+    { "?",  TokenType::question }
 };
 
 static bool isSymbol(const std::string &prefix){

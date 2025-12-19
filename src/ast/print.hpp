@@ -140,12 +140,38 @@ static void printAst(TypeNode *type, int level){
         return;
     }
     printSpace(level); 
-    std::cout << "typeNode | " << type->main << std::endl;
-    if(!type->generics.empty()){
-        for(TypeNode *gen : type->generics){
-            printAst(gen, level + 1);
+    switch(type->kind){
+    case TypeNodeKind::atom:
+        std::cout << "typeNodeAtom | " << type->as<TypeNodeAtom>().main << std::endl;
+        if(!type->as<TypeNodeAtom>().generics.empty()){
+            for(TypeNode *gen : type->as<TypeNodeAtom>().generics){
+                printAst(gen, level + 1);
+            }
         }
+    break;
+    case TypeNodeKind::function:
+        std::cout << "typeNodeFunction" << std::endl;
+        printSpace(level + 1);
+        std::cout << ".args" << std::endl;
+        for(TypeNode *args : type->as<TypeNodeFunction>().args){
+            printAst(args, level + 2);
+        }
+        printAst(type->as<TypeNodeFunction>().retType, level + 1);
+    break;
+    case TypeNodeKind::array:
+        std::cout << "typeNodeArray" << std::endl;
+        printAst(type->as<TypeNodeArray>().elemType, level + 1);
+    break;
+    case TypeNodeKind::option:
+        std::cout << "typeNodeOption" << std::endl;
+        printAst(type->as<TypeNodeOption>().innerType, level + 1);
+    break;
+    case TypeNodeKind::result:
+        std::cout << "typeNodeResult" << std::endl;
+        printAst(type->as<TypeNodeResult>().innerType, level + 1);
+    break;
     }
+
 }
 
 static void printAst(TuplePatternBase *pattern, int level){

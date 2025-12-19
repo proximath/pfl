@@ -35,27 +35,14 @@ void Parser::popOperatorStack(std::vector<ExprNode*> &operatorNodes, ExprNode *&
     operatorNodes.push_back(newNode);
 }
 
-ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters){
-	//std::cout << "EXP" << std::endl;
+ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consume){
 	ExprNode *lastPrimary = nullptr;
 	bool prevOperator = false;
 	bool prevUnary = false;
 	std::vector<ExprNode*> operatorNodes;
-		
-	//ExprNode *assignment = tryAssignment({ TokenType::newline });
-	// if(assignment){
-	// 	return assignment;
-	// }
 	while(tokenInd < tokens.size()){
 		Token &curToken = tokens[tokenInd];
-		//std::cout << "Reading token " << getTokenTypeName(curToken.type) << std::endl;
-		// for(int i = 0; i < operatorNodes.size(); i++){
-		// 	std::cout << ExprKind(operatorNodes[i]->type) << " ";
-		// }
-		// std::cout << std::endl;
-		//std::cout << (std::find(delimeter.begin(), delimeter.end(), curToken.type)) << " " << (delimeter.end()) << std::endl;
 		if(std::find(delimeters.begin(), delimeters.end(), curToken.type) != delimeters.end()){
-			//std::cout << "HEY" << std::endl;
 			if(!operatorNodes.empty() && lastPrimary){
 				ExprNode *lastOp = operatorNodes.back();
 				if(isPrefixOperator(lastOp->kind)){
@@ -74,7 +61,9 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 				}
 				operatorNodes.pop_back();
 			}
-			tokenInd++;
+			if(consume){
+				tokenInd++;
+			}
 			break;
 		} else if(isOperator(curToken) && (!lastPrimary || prevOperator)){ // Prefix Operator
 			ExprNode *newNode = new ExprNode(
@@ -85,8 +74,7 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			lastPrimary = nullptr;
 			prevUnary = true;
 			prevOperator = true;
-		} else if(isOperator(curToken)){ // Binary/Postfix Operator
-			//std::cout << "Add binary/postfix operator" << std::endl;
+		} else if(isOperator(curToken)){ 
 			ExprNode *newNode; 
 			if(isPostfixOp(curToken.type)){
 				newNode = new ExprNode(
@@ -133,10 +121,10 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters){
 			prevUnary = false;
 			continue;
 		} else if(curToken.type == TokenType::fnKeyword){
-			ExprNode *func = handleFn();
+			ExprNode *func = handleFn(delimeters);
 			return func;
 		} else if(curToken.type == TokenType::ifKeyword){
-			ExprNode *expr = handleIf();
+			ExprNode *expr = handleIf({ TokenType::newline });
 			return expr;
 		} else if(curToken.type == TokenType::structKeyword){
 			ExprNode *structure = handleStruct();

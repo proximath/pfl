@@ -20,15 +20,15 @@ private:
     FunctionParam* handleFnParam();
     void handleFnParamList(Function*);
     ExprNode* handleBlock();
-    ExprNode* handleFn();
+    ExprNode* handleFn(std::vector<TokenType>);
     TypeNode* handleTypeNode();
-    ExprNode* handleIf();
+    ExprNode* handleIf(std::vector<TokenType>);
     ExprNode* handleCallArgsList();
     ExprNode* handleArrayLiteral();
     ExprNode* handleArraySubscript();
     ExprNode* handleStringTemplate();
     ExprNode* handleFormatString();
-    ExprNode* handleExpression(std::vector<TokenType>);
+    ExprNode* handleExpression(std::vector<TokenType>, bool = true);
     StructMethod* handleStructMethod();
     StructAttribute* handleStructAttribute();
     ExprNode* handleStruct();

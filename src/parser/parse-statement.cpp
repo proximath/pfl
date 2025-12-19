@@ -65,17 +65,21 @@ ExprNode* Parser::handleFormatString(){
 	return returned;
 }
 
-ExprNode* Parser::handleIf(){
-	ExprNode *returned = new ExprNode(ExprKind::ifExpr, IfExpr{});
+ExprNode* Parser::handleIf(std::vector<TokenType> delimiters){
+	ExprNode *returned = createNode(ExprKind::ifExpr);
 	expectToken(TokenType::ifKeyword);
-	ExprNode *expr = handleExpression({ TokenType::colon });
-	returned->as<IfExpr>().condition = expr;
-	expectToken(TokenType::newline);
-	expectToken(TokenType::indent);	
-	ExprNode *ifBlock = handleBlock();
+	ExprNode *condition = handleExpression({ TokenType::colon });
+	returned->as<IfExpr>().condition = condition;
+	ExprNode *ifBlock;
+	if(!discardToken(TokenType::newline)){
+		ifBlock = handleExpression({ TokenType::elseKeyword, TokenType::elifKeyword, TokenType::newline });
+	} else {
+		expectToken(TokenType::indent);	
+		ExprNode *ifBlock = handleBlock();
+	}
 	returned->as<IfExpr>().ifBlock = ifBlock;
 	while(discardToken(TokenType::elifKeyword)){
-		expr = handleExpression({ TokenType::colon });
+		ExprNode *expr = handleExpression({ TokenType::colon });
 		discardToken(TokenType::newline);
 		returned->as<IfExpr>().elifCondition.push_back(expr);
 		ExprNode *elifBlock = handleBlock();
@@ -101,17 +105,17 @@ FunctionParam* Parser::handleFnParam(){
 }
 
 void Parser::handleFnParamList(Function *fn){
+	expectToken(TokenType::parenStart);
 	while(tokenInd < tokens.size()){
-		if(getCurToken().type == TokenType::parenEnd){
+		if(discardToken(TokenType::parenEnd)){
 			break;
 		}
 		fn->params.push_back(handleFnParam());
-		if(getCurToken().type == TokenType::parenEnd){
+		if(discardToken(TokenType::parenEnd)){
 			break;
 		}
 		expectToken(TokenType::comma);
 	}
-	expectToken(TokenType::parenEnd);
 }
 
 void Parser::handleGenericDecl(Structure *structure){
@@ -130,29 +134,66 @@ void Parser::handleGenericDecl(Structure *structure){
 }
 
 TypeNode* Parser::handleTypeNode(){
-	TypeNode *returned = new TypeNode;
-	returned->main = expectToken(TokenType::identifier).text;
-	if(discardToken(TokenType::squareStart)){
+	TypeNode *returned;
+	if(discardToken(TokenType::fnKeyword)){
+		TypeNodeFunction *fn = new TypeNodeFunction;
+		fn->kind = TypeNodeKind::function;
+		expectToken(TokenType::parenStart);
 		bool first = true;
-		while(tokenInd < tokens.size()){
+		while(!discardToken(TokenType::parenEnd)){
 			if(!first){
 				expectToken(TokenType::comma);
 			}
 			first = false;
-			returned->generics.push_back(handleTypeNode());
-			if(getCurToken().type == TokenType::squareEnd){
-				tokenInd++;
-				break;
-			} 
+			fn->args.push_back(handleTypeNode());
 		}
+		expectToken(TokenType::arrow);
+		fn->retType = handleTypeNode();
+		returned = fn;
+	} else if(discardToken(TokenType::squareStart)){
+		TypeNodeArray *array = new TypeNodeArray;
+		array->kind = TypeNodeKind::array;
+		array->elemType = handleTypeNode();
+		expectToken(TokenType::squareEnd);	
+		returned = array;
+	} else {
+		TypeNodeAtom *atom = new TypeNodeAtom;
+		atom->kind = TypeNodeKind::atom;
+		atom->main = expectToken(TokenType::identifier).text;
+		if(discardToken(TokenType::squareStart)){
+			bool first = true;
+			while(tokenInd < tokens.size()){
+				if(!first){
+					expectToken(TokenType::comma);
+				}
+				first = false;
+				atom->generics.push_back(handleTypeNode());
+				if(getCurToken().type == TokenType::squareEnd){
+					tokenInd++;
+					break;
+				} 
+			}
+		}
+		returned = atom;
 	}
+	if(discardToken(TokenType::exclamation)){
+		TypeNodeResult *result = new TypeNodeResult;
+		result->kind = TypeNodeKind::result;
+		result->innerType = returned;
+		returned = result;
+	} else if(discardToken(TokenType::question)){
+		TypeNodeOption *option = new TypeNodeOption;
+		option->kind = TypeNodeKind::option;
+		option->innerType = returned;
+		returned = option;
+	}	
 	return returned;
 }
 
-ExprNode* Parser::handleFn(){
+ExprNode* Parser::handleFn(std::vector<TokenType> delimeters){
 	ExprNode *returned = new ExprNode(ExprKind::function, Function{});
 	expectToken(TokenType::fnKeyword);
-	if(getCurToken().type == TokenType::identifier){
+	if(isCurToken(TokenType::identifier)){
 		returned->as<Function>().name = discardToken(TokenType::identifier)->text;
 	} else {
 		returned->as<Function>().name = "<unnamed>";
@@ -162,13 +203,13 @@ ExprNode* Parser::handleFn(){
 		returned->as<Function>().returnType = handleTypeNode();
 	}
 	expectToken(TokenType::colon);
-	discardToken(TokenType::newline);
-	if(discardToken(TokenType::indent)){
+	if(discardToken(TokenType::newline)){
+		expectToken(TokenType::indent);
 		ExprNode *block = handleBlock();
 		returned->as<Function>().block = block;
 	} else {
-		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
-		ExprNode *block = handleExpression({ TokenType::newline });
+		ExprNode *block = createNode(ExprKind::block);
+		block->as<Block>().expressions.push_back(handleExpression(delimeters));
 		returned->as<Function>().block = block;
 	}
 	return returned;
@@ -370,9 +411,9 @@ ExprNode* Parser::handleStruct(){
 }
 
 ExprNode* Parser::handleEnum(){
-
+	return createNode(ExprKind::enumeration);
 }
 
 ExprNode* Parser::handleMatch(){
-
+	return createNode(ExprKind::matchExpr);
 }

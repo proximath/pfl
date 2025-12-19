@@ -80,9 +80,46 @@ static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
 class ExprNode;
 class Type;
 
+enum class TypeNodeKind {
+    atom,
+    function,
+    array,
+    option,
+    result
+};
+
 struct TypeNode {
+    TypeNodeKind kind;
+    template<typename T>
+    T* pun(){
+        return reinterpret_cast<T*>(this);
+    }
+    template<typename T>
+    T& as(){
+        return *reinterpret_cast<T*>(this);
+    }
+};
+
+struct TypeNodeFunction : TypeNode {
+    std::vector<TypeNode*> args;
+    TypeNode *retType;
+};
+
+struct TypeNodeArray : TypeNode {
+    TypeNode *elemType;
+};
+
+struct TypeNodeAtom : TypeNode {
     std::string main;
     std::vector<TypeNode*> generics;
+};
+
+struct TypeNodeOption : TypeNode {
+    TypeNode *innerType;
+};
+
+struct TypeNodeResult : TypeNode {
+    TypeNode *innerType;
 };
 
 struct BinaryOperation {
