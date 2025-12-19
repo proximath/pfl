@@ -128,6 +128,33 @@ static void printAst(ExprNode *node, int level = 0){
             printAst(method, level + 1);
         }
     break;
+    case ExprKind::enumeration:
+        std::cout << " | " << node->as<Enumeration>().name << std::endl;
+        printSpace(level + 1);
+        std::cout << ".generics:" << std::endl;
+        for(std::string &gen : node->as<Enumeration>().generics){
+            printSpace(level + 2);
+            std::cout << gen << std::endl;
+        }
+        for(EnumVariant *variant : node->as<Enumeration>().variants){
+            printSpace(level + 1);
+            std::cout << "enumVariant | " << variant->name << std::endl;
+            printAst(variant->type, level + 2);
+        }
+        for(StructMethod *method : node->as<Enumeration>().methods){
+            printAst(method, level + 1);
+        }
+    break;
+    case ExprKind::matchExpr:
+    std::cout << std::endl;
+        printAst(node->as<MatchExpr>().expr, level + 1);
+        for(int i = 0; i < node->as<MatchExpr>().variants.size(); i++){
+            printSpace(level + 1);
+            std::cout << "matchVariant | " << node->as<MatchExpr>().variants[i] << std::endl;
+            printAst(node->as<MatchExpr>().patterns[i], level + 2);
+            printAst(node->as<MatchExpr>().blocks[i], level + 2);
+        }
+    break;
     default:
         throw SystemError(std::string("printAst node kind ") +
             getNodeTypeName(node->kind) +  " is unimplemented", 
@@ -170,6 +197,14 @@ static void printAst(TypeNode *type, int level){
         std::cout << "typeNodeResult" << std::endl;
         printAst(type->as<TypeNodeResult>().innerType, level + 1);
     break;
+    case TypeNodeKind::tuple:
+        std::cout << "typeNodeTuple" << std::endl;
+        for(TypeNode *child : type->as<TypeNodeTuple>().children){
+            printAst(child, level + 1);
+        }
+    break;
+    default:
+        throw SystemError("printAst(TypeNode) not implemented");
     }
 
 }

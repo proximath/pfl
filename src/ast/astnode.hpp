@@ -85,7 +85,8 @@ enum class TypeNodeKind {
     function,
     array,
     option,
-    result
+    result,
+    tuple
 };
 
 struct TypeNode {
@@ -120,6 +121,10 @@ struct TypeNodeOption : TypeNode {
 
 struct TypeNodeResult : TypeNode {
     TypeNode *innerType;
+};
+
+struct TypeNodeTuple : TypeNode {
+    std::vector<TypeNode*> children;
 };
 
 struct BinaryOperation {
@@ -237,6 +242,11 @@ struct CallArgsList {
     std::vector<ExprNode*> args;
 };
 
+struct KeywordCallArgsList {
+    std::vector<std::string> names;
+    std::vector<ExprNode*> values;
+};
+
 struct ArraySubscript {
     ExprNode *index;
 };
@@ -261,6 +271,7 @@ struct StructMethod {
     std::vector<FunctionParam*> params;
     TypeNode* returnType;
     ExprNode* block;
+    bool isStatic = true;
 };
 
 struct Structure {
@@ -270,12 +281,23 @@ struct Structure {
     std::vector<StructMethod*> methods;
 };
 
-struct Enumeration {
+struct EnumVariant {
+    std::string name;
+    TypeNode *type;
+};
 
+struct Enumeration {
+    std::string name;
+    std::vector<EnumVariant*> variants;
+    std::vector<std::string> generics;
+    std::vector<StructMethod*> methods;
 };
 
 struct MatchExpr {
-
+    ExprNode *expr;
+    std::vector<std::string> variants;
+    std::vector<TuplePatternBase*> patterns;
+    std::vector<ExprNode*> blocks;
 };
 
 struct ExprNode {

@@ -32,13 +32,13 @@ private:
     StructMethod* handleStructMethod();
     StructAttribute* handleStructAttribute();
     ExprNode* handleStruct();
+    EnumVariant* handleEnumVariant();
     ExprNode* handleEnum();
     ExprNode* handleMatch();
     TuplePatternBase* tryTuplePattern(TokenType);
     ExprNode* tryTupleExpression(TokenType);
     ExprNode* tryAssignment();
-    ExprNode* tryTypedIdentifier();
-    void handleGenericDecl(Structure*);
+    void handleGenericDecl(std::vector<std::string>&);
     void emitError(const std::string&);
     void popOperatorStack(std::vector<ExprNode*>&, ExprNode*&, ExprNode*&);
     void addCheckpoint();

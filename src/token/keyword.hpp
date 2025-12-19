@@ -20,6 +20,7 @@ static std::unordered_map<std::string, TokenType> keywordLookup = {
     { "struct", TokenType::structKeyword },
     { "enum", TokenType::enumKeyword },
     { "match", TokenType::matchKeyword },
+    { "self", TokenType::selfKeyword },
 };
 
 static bool isKeyword(const std::string &word){

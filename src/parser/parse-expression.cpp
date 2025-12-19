@@ -93,8 +93,6 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consu
 			prevOperator = true;
 		} else if(isPrimary(curToken)){
 			if(lastPrimary){
-				//std::cerr << ExprKind(lastPrimary->type) << " " << lastPrimary->as<Identifier>().name << " "
-				// << curToken.text << " " << curToken.line_num << " " << curToken.column_num << std::endl;
 				emitError("Expected an operator");
 			}
 			ExprNode *newNode = tokenToPrimary(curToken); 			
@@ -148,10 +146,11 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consu
 			prevOperator = false;
 			prevUnary = false;
 			continue;
+		} else {
+			emitError(std::string("Unexpected token ") + getTokenTypeName(getCurToken().type));
 		}
 		tokenInd++;
-	}
-	//std::cout << "RET" << std::endl;
+	} 	
 	if(!operatorNodes.empty()){
 		return operatorNodes.front();
 	} else if(lastPrimary){

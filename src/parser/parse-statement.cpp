@@ -26,15 +26,10 @@ ExprNode* Parser::handleStringTemplate(){
 	ExprNode *returned = new ExprNode(ExprKind::stringTemplate, StringTemplate{});
 	ExprNode *value = handleExpression({ TokenType::curlyEnd, TokenType::colon });
 	returned->as<StringTemplate>().value = value;
-	//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
 	if(getPrevToken().type == TokenType::colon){
-		//std::cout << "YES" << std::endl;
 		ExprNode *format = handleExpression({ TokenType::curlyEnd });
-		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
-
 		returned->as<StringTemplate>().format = format;
 	}
-	//printAst(returned);
 	return returned;
 }
 
@@ -43,7 +38,6 @@ ExprNode* Parser::handleFormatString(){
 	ExprNode *returned = new ExprNode(ExprKind::formatString, FormatString{});
 	bool odd = true;
 	while(tokenInd < tokens.size()){
-		//std::cout << "READ " << getTokenTypeName(getCurToken().type) << std::endl;
 		if(discardToken(TokenType::doubleQuote)) {
 			break;
 		}
@@ -118,78 +112,6 @@ void Parser::handleFnParamList(Function *fn){
 	}
 }
 
-void Parser::handleGenericDecl(Structure *structure){
-	bool first = true;
-	while(tokenInd < tokens.size()){
-		if(!first){
-			expectToken(TokenType::comma);
-		}
-		first = false;
-		structure->generics.push_back(expectToken(TokenType::identifier).text);
-		if(getCurToken().type == TokenType::squareEnd){
-			tokenInd++;
-			break;
-		}
-	}
-}
-
-TypeNode* Parser::handleTypeNode(){
-	TypeNode *returned;
-	if(discardToken(TokenType::fnKeyword)){
-		TypeNodeFunction *fn = new TypeNodeFunction;
-		fn->kind = TypeNodeKind::function;
-		expectToken(TokenType::parenStart);
-		bool first = true;
-		while(!discardToken(TokenType::parenEnd)){
-			if(!first){
-				expectToken(TokenType::comma);
-			}
-			first = false;
-			fn->args.push_back(handleTypeNode());
-		}
-		expectToken(TokenType::arrow);
-		fn->retType = handleTypeNode();
-		returned = fn;
-	} else if(discardToken(TokenType::squareStart)){
-		TypeNodeArray *array = new TypeNodeArray;
-		array->kind = TypeNodeKind::array;
-		array->elemType = handleTypeNode();
-		expectToken(TokenType::squareEnd);	
-		returned = array;
-	} else {
-		TypeNodeAtom *atom = new TypeNodeAtom;
-		atom->kind = TypeNodeKind::atom;
-		atom->main = expectToken(TokenType::identifier).text;
-		if(discardToken(TokenType::squareStart)){
-			bool first = true;
-			while(tokenInd < tokens.size()){
-				if(!first){
-					expectToken(TokenType::comma);
-				}
-				first = false;
-				atom->generics.push_back(handleTypeNode());
-				if(getCurToken().type == TokenType::squareEnd){
-					tokenInd++;
-					break;
-				} 
-			}
-		}
-		returned = atom;
-	}
-	if(discardToken(TokenType::exclamation)){
-		TypeNodeResult *result = new TypeNodeResult;
-		result->kind = TypeNodeKind::result;
-		result->innerType = returned;
-		returned = result;
-	} else if(discardToken(TokenType::question)){
-		TypeNodeOption *option = new TypeNodeOption;
-		option->kind = TypeNodeKind::option;
-		option->innerType = returned;
-		returned = option;
-	}	
-	return returned;
-}
-
 ExprNode* Parser::handleFn(std::vector<TokenType> delimeters){
 	ExprNode *returned = new ExprNode(ExprKind::function, Function{});
 	expectToken(TokenType::fnKeyword);
@@ -232,30 +154,6 @@ ExprNode* Parser::handleArraySubscript(){
 	ExprNode *returned = new ExprNode(ExprKind::arraySubscript, ArraySubscript{});
 	returned->as<ArraySubscript>().index = handleExpression({ TokenType::squareEnd });
 	return returned;
-}
-
-ExprNode* Parser::tryTypedIdentifier(){
-	//std::cout << "ENTER" << std::endl;
-	addCheckpoint();
-	ExprNode *returned = new ExprNode(ExprKind::typedIdentifier, TypedIdentifier{});
-
-	std::cout << getTokenTypeName(getCurToken().type) << std::endl;
-	if(getCurToken().type == TokenType::identifier){
-		//std::cout << "YES" << std::endl;
-		returned->as<TypedIdentifier>().name = getCurToken().text;
-		tokenInd++;
-		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
-		if(discardToken(TokenType::colon)){
-			//std::cout << "SUCC" << std::endl;
-			Token &type = expectToken(TokenType::identifier, "Expected a type after ':'");
-			returned->as<TypedIdentifier>().type = type.text;
-			commitCheckpoint();
-			return returned;
-		}
-	}
-	//std::cout << "FAIL" << std::endl;
-	restoreCheckpoint();
-	return nullptr;
 }
 
 ExprNode* Parser::tryAssignment(){
@@ -339,81 +237,28 @@ ExprNode* Parser::tryTupleExpression(TokenType delimeter){
 		discardToken(TokenType::comma);
 	}
 	commitCheckpoint();
-	return returned;
-}
-
-StructMethod* Parser::handleStructMethod(){
-	StructMethod *method = new StructMethod;
-	while(tokenInd < tokens.size()){
-		if(getCurToken().type == TokenType::parenEnd){
-			break;
-		}
-		method->params.push_back(handleFnParam());
-		if(getCurToken().type == TokenType::parenEnd){
-			break;
-		}
-		expectToken(TokenType::comma);
-	}
-	expectToken(TokenType::parenEnd);
-	if(discardToken(TokenType::arrow)){
-		method->returnType = handleTypeNode();
-	}
-	expectToken(TokenType::colon);
-	discardToken(TokenType::newline);
-	if(discardToken(TokenType::indent)){
-		ExprNode *block = handleBlock();
-		method->block = block;
-	} else {
-		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
-		ExprNode *block = handleExpression({ TokenType::newline });
-		method->block = block;
-	}
-	return method;
-}
-
-StructAttribute* Parser::handleStructAttribute(){
-	StructAttribute *attr = new StructAttribute;
-	expectToken(TokenType::colon);
-	attr->type = handleTypeNode();
-	return attr;	
-}
-
-ExprNode* Parser::handleStruct(){
-	//std::cout << "Y" << std::endl;
-	ExprNode *returned = createNode(ExprKind::structure);
-	expectToken(TokenType::structKeyword);
-	returned->as<Structure>().name = expectToken(TokenType::identifier).text;;
-	if(discardToken(TokenType::squareStart)){
-		handleGenericDecl(returned->pun<Structure>());
-	}
-	expectToken(TokenType::colon);
-	expectToken(TokenType::newline);
-	expectToken(TokenType::indent);
-	while(tokenInd < tokens.size()){
-		//std::cout << getTokenTypeName(getCurToken().type) << std::endl;
-		std::string name = expectToken(TokenType::identifier, 
-			std::string("Unexpected token ") + getTokenTypeName(getCurToken().type)).text;
-		if(discardToken(TokenType::parenStart)){
-			StructMethod *method = handleStructMethod();
-			method->name = name;
-			returned->as<Structure>().methods.push_back(method);
-		} else {
-			StructAttribute *attr = handleStructAttribute();
-			attr->name = name;
-			returned->as<Structure>().attributes.push_back(attr);
-		}
-		discardToken(TokenType::newline);
-		if(discardToken(TokenType::dedent)){
-			break;
-		}
+	if(returned->as<TupleExpression>().children.size() == 1){
+		ExprNode *expr = returned->as<TupleExpression>().children.front(); 
+		return expr;
 	}
 	return returned;
-}
-
-ExprNode* Parser::handleEnum(){
-	return createNode(ExprKind::enumeration);
 }
 
 ExprNode* Parser::handleMatch(){
-	return createNode(ExprKind::matchExpr);
+	ExprNode *returned = createNode(ExprKind::matchExpr);
+	expectToken(TokenType::matchKeyword);
+	ExprNode *expr = handleExpression({ TokenType::colon });
+	returned->as<MatchExpr>().expr = expr;
+	expectToken(TokenType::newline);
+	expectToken(TokenType::indent);
+	while(tokenInd < tokens.size() && !isCurToken(TokenType::dedent)){
+		returned->as<MatchExpr>().variants.push_back(expectToken(TokenType::identifier, "Need name").text);
+		TuplePatternBase *base = tryTuplePattern({TokenType::colon});
+		returned->as<MatchExpr>().patterns.push_back(base);
+		expectToken(TokenType::newline);
+		expectToken(TokenType::indent);
+		returned->as<MatchExpr>().blocks.push_back(handleBlock());
+	}
+	discardToken(TokenType::dedent);
+	return returned;
 }

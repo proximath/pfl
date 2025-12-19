@@ -57,7 +57,7 @@ static ExprKind tokenToUnaryOperation(TokenType type){
 	case TokenType::notKeyword:
 		return ExprKind::negation;
 	default:
-		throw SystemError("tokenToUnaryOperator not a unary operator", __FILE_NAME__, __LINE__);
+		throw SystemError(std::string("tokenToUnaryOperator ") + getTokenTypeName(type) + " not a unary operator", __FILE_NAME__, __LINE__);
 	}
 }
 
