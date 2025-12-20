@@ -69,7 +69,7 @@ static void printAst(ExprNode *node, int level = 0){
         printAst(node->as<Function>().block, level + 1);
     break;
     case ExprKind::block:
-         std::cout << std::endl;
+        std::cout << std::endl;
         for(ExprNode *expr : node->as<Block>().expressions){
             printAst(expr, level + 1);
         }   

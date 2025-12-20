@@ -5,7 +5,7 @@
 
 #include <variant>
 
-enum class ExprKind {
+enum  ExprKind {
     // Building blocks
     block,
     // Primaries (*not exhaustive)
@@ -269,7 +269,7 @@ struct StructAttribute {
 struct StructMethod {
     std::string name;
     std::vector<FunctionParam*> params;
-    TypeNode* returnType;
+    TypeNode* returnType = nullptr;
     ExprNode* block;
     bool isStatic = true;
 };
@@ -347,7 +347,7 @@ struct ExprNode {
 
 static const char* getNodeTypeName(ExprKind type){
     if(!nodeTypeNameLookup.count(type)){
-        throw SystemError("getNodeTypeName not implemented", __FILE__, __LINE__);
+        throw SystemError("getNodeTypeName not implemented", __FILE_NAME__, __LINE__);
     }
     return nodeTypeNameLookup[type];
 }

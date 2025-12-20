@@ -41,6 +41,7 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consu
 	bool prevUnary = false;
 	std::vector<ExprNode*> operatorNodes;
 	while(tokenInd < tokens.size()){
+		//std::cout << "Read " << getTokenTypeName(getCurToken().type) << std::endl;
 		Token &curToken = tokens[tokenInd];
 		if(std::find(delimeters.begin(), delimeters.end(), curToken.type) != delimeters.end()){
 			if(!operatorNodes.empty() && lastPrimary){
@@ -107,7 +108,10 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consu
 				lastPrimary = args;
 			} else {
 				tokenInd++;
-				lastPrimary = handleExpression({ TokenType::parenEnd });
+				lastPrimary = tryTupleExpression({ TokenType::parenEnd });
+				if(!lastPrimary){
+					lastPrimary = handleExpression({ TokenType::parenEnd });
+				}
 			}
 			prevOperator = false;
 			prevUnary = false;

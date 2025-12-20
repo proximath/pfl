@@ -6,19 +6,22 @@
 
 ExprNode* Parser::handleBlock(){
 	ExprNode *returned = new ExprNode(ExprKind::block, Block{});
-	ExprNode *assignment = tryAssignment();
-	if(assignment){
-		returned->as<Block>().expressions.push_back(assignment);
-	} else {
-		//std::cout << "FAIL" << std::endl;
-	}
 	while(tokenInd < tokens.size()){
+		ExprNode *assignment = tryAssignment();
+		if(assignment){
+			returned->as<Block>().expressions.push_back(assignment);
+			continue;
+		} else {
+			//std::cout << "FAIL" << std::endl;
+		}
 		ExprNode *exp = handleExpression({ TokenType::newline });
 		returned->as<Block>().expressions.push_back(exp);
 		if(discardToken(TokenType::dedent)){
 			break;
 		}
 	}
+	std::cout << returned << std::endl;
+	std::cout << returned->kind << std::endl;
 	return returned;
 }
 
@@ -69,7 +72,7 @@ ExprNode* Parser::handleIf(std::vector<TokenType> delimiters){
 		ifBlock = handleExpression({ TokenType::elseKeyword, TokenType::elifKeyword, TokenType::newline });
 	} else {
 		expectToken(TokenType::indent);	
-		ExprNode *ifBlock = handleBlock();
+		ifBlock = handleBlock();
 	}
 	returned->as<IfExpr>().ifBlock = ifBlock;
 	while(discardToken(TokenType::elifKeyword)){
@@ -130,9 +133,7 @@ ExprNode* Parser::handleFn(std::vector<TokenType> delimeters){
 		ExprNode *block = handleBlock();
 		returned->as<Function>().block = block;
 	} else {
-		ExprNode *block = createNode(ExprKind::block);
-		block->as<Block>().expressions.push_back(handleExpression(delimeters));
-		returned->as<Function>().block = block;
+		returned->as<Function>().block = handleExpression(delimeters);
 	}
 	return returned;
 }
@@ -162,12 +163,8 @@ ExprNode* Parser::tryAssignment(){
 	TuplePatternBase *pattern;
 	if(pattern = tryTuplePattern(TokenType::equal)){
 		returned->as<Assignment>().lhs = pattern;
-		ExprNode *expr;
-		if(expr = tryTupleExpression(TokenType::newline)){
-			returned->as<Assignment>().rhs = expr;
-		} else {
-			emitError("Expected an expression after equal sign");
-		}
+		ExprNode *expr = handleExpression({ TokenType::newline });
+		returned->as<Assignment>().rhs = expr;
 	} else {
 		restoreCheckpoint();
 		//std::cout << "Fail" << std::endl;
@@ -236,11 +233,11 @@ ExprNode* Parser::tryTupleExpression(TokenType delimeter){
 		}
 		discardToken(TokenType::comma);
 	}
-	commitCheckpoint();
 	if(returned->as<TupleExpression>().children.size() == 1){
-		ExprNode *expr = returned->as<TupleExpression>().children.front(); 
-		return expr;
+		restoreCheckpoint();
+		return nullptr;
 	}
+	commitCheckpoint();
 	return returned;
 }
 

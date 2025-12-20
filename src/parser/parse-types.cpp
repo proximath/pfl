@@ -7,11 +7,11 @@ StructMethod* Parser::handleStructMethod(){
 		discardToken(TokenType::comma);
 	}
 	while(tokenInd < tokens.size()){
-		if(getCurToken().type == TokenType::parenEnd){
+		if(isCurToken(TokenType::parenEnd)){
 			break;
 		}
 		method->params.push_back(handleFnParam());
-		if(getCurToken().type == TokenType::parenEnd){
+		if(isCurToken(TokenType::parenEnd)){
 			break;
 		}
 		expectToken(TokenType::comma);
@@ -21,10 +21,10 @@ StructMethod* Parser::handleStructMethod(){
 		method->returnType = handleTypeNode();
 	}
 	expectToken(TokenType::colon);
-	discardToken(TokenType::newline);
-	if(discardToken(TokenType::indent)){
-		ExprNode *block = handleBlock();
-		method->block = block;
+	if(discardToken(TokenType::newline)){
+		expectToken(TokenType::indent);
+		method->block = handleBlock();
+		std::cout << "EY " << method->block << std::endl;
 	} else {
 		std::cerr << "WARNING: currently we have no way of terminating function at specific token" << std::endl;
 		ExprNode *block = handleExpression({ TokenType::newline });
