@@ -100,7 +100,9 @@ ExprNode* Parser::parse(std::vector<Token> tokenStream){
 			continue;
 		}
 		ExprNode *exp = handleExpression({ TokenType::newline });	
-		root->as<Block>().expressions.push_back(exp);
+		if(exp){
+			root->as<Block>().expressions.push_back(exp);
+		}
 	}
 	return root;
 }

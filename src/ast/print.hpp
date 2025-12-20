@@ -90,6 +90,14 @@ static void printAst(ExprNode *node, int level = 0){
             printAst(args, level + 1);
         }
     break;
+    case ExprKind::keywordCallArgsList:
+        std::cout << std::endl;
+        for(int i = 0; i < node->as<KeywordCallArgsList>().names.size(); i++){
+            printSpace(level + 1);
+            std::cout << "keywordArg | " << node->as<KeywordCallArgsList>().names[i] << std::endl;
+            printAst(node->as<KeywordCallArgsList>().values[i], level + 2);
+        }
+    break;
     case ExprKind::arrayLiteral:
         std::cout << std::endl;
         for(ExprNode *elem : node->as<ArrayLiteral>().elements){

@@ -103,7 +103,10 @@ ExprNode* Parser::handleExpression(std::vector<TokenType> delimeters, bool consu
 		} else if(curToken.type == TokenType::parenStart){
 			if(lastPrimary){
 				ExprNode *callNode = new ExprNode(ExprKind::call, BinaryOperation{});
-				ExprNode *args = handleCallArgsList();
+				ExprNode *args = tryKeywordCallArgsList();
+				if(!args){
+					args = handleCallArgsList();
+				}
 				popOperatorStack(operatorNodes, lastPrimary, callNode);
 				lastPrimary = args;
 			} else {

@@ -24,6 +24,7 @@ private:
     TypeNode* handleTypeNode();
     ExprNode* handleIf(std::vector<TokenType>);
     ExprNode* handleCallArgsList();
+    ExprNode* tryKeywordCallArgsList();
     ExprNode* handleArrayLiteral();
     ExprNode* handleArraySubscript();
     ExprNode* handleStringTemplate();

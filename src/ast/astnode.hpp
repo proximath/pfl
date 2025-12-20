@@ -21,7 +21,7 @@ enum  ExprKind {
     // Comparisan
     equality, inequality, lessThan, greaterThan, lessEqual, greaterEqual,
     // Function
-    function, callArgsList, call,
+    function, callArgsList, keywordCallArgsList, call,
     // Statement-like
     ifExpr, forExpr,
     memberAccess,
@@ -65,6 +65,7 @@ static std::unordered_map<ExprKind, const char*> nodeTypeNameLookup = {
     { ExprKind::ifExpr, "ifExpr" },
     { ExprKind::call, "call" },
     { ExprKind::callArgsList, "callArgsList" },
+    { ExprKind::keywordCallArgsList, "keywordCallArgsList" },
     { ExprKind::forExpr, "forExpr" },
     { ExprKind::arrayLiteral, "arrayLiteral" },
     { ExprKind::arrayAccess, "arrayAccess" },
@@ -318,6 +319,7 @@ struct ExprNode {
         Block,
         IfExpr,
         CallArgsList,
+        KeywordCallArgsList,
         ArrayLiteral,
         Assignment,
         TupleExpression,
@@ -385,6 +387,7 @@ static ExprNode* createNode(ExprKind type){
     case ExprKind::ifExpr: return new ExprNode(type, IfExpr{});
     case ExprKind::call: return new ExprNode(type, BinaryOperation{});
     case ExprKind::callArgsList: return new ExprNode(type, CallArgsList{});
+    case ExprKind::keywordCallArgsList: return new ExprNode(type, KeywordCallArgsList{});
     case ExprKind::arrayLiteral: return new ExprNode(type, ArrayLiteral{});
     case ExprKind::arrayAccess: return new ExprNode(type, BinaryOperation{});
     case ExprKind::arraySubscript: return new ExprNode(type, ArraySubscript{});

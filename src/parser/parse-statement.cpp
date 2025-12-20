@@ -15,7 +15,9 @@ ExprNode* Parser::handleBlock(){
 			//std::cout << "FAIL" << std::endl;
 		}
 		ExprNode *exp = handleExpression({ TokenType::newline });
-		returned->as<Block>().expressions.push_back(exp);
+		if(exp){
+			returned->as<Block>().expressions.push_back(exp);
+		}
 		if(discardToken(TokenType::dedent)){
 			break;
 		}
@@ -142,8 +144,9 @@ ExprNode* Parser::handleCallArgsList(){
 	expectToken(TokenType::parenStart);
 	ExprNode *returned = new ExprNode(ExprKind::callArgsList, CallArgsList{});
 	while(getPrevToken().type != TokenType::parenEnd){
+		//std::cout << "Read " << getTokenTypeName(getCurToken().type) << std::endl;
 		ExprNode *arg = handleExpression({ TokenType::comma, TokenType::parenEnd });	
-		//std::cout << "PB " << ExprKind(arg->type) << std::endl;
+		//std::cout << "PB " << (arg->type) << std::endl;
 		returned->as<CallArgsList>().args.push_back(arg);
 		//std::cout << getTokenTypeName(getPrevToken().type) << std::endl;
 	}

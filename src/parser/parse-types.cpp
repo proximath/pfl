@@ -182,3 +182,30 @@ void Parser::handleGenericDecl(std::vector<std::string> &genericList){
 		}
 	}
 }
+
+ExprNode* Parser::tryKeywordCallArgsList(){
+	addCheckpoint();
+	expectToken(TokenType::parenStart);
+	ExprNode *returned = createNode(ExprKind::keywordCallArgsList);
+	bool first = true;
+	while(getPrevToken().type != TokenType::parenEnd){
+		if(first){
+			if(!isCurToken(TokenType::identifier)){
+				restoreCheckpoint();
+				return nullptr;
+			}
+			returned->as<KeywordCallArgsList>().names.push_back(expectToken(TokenType::identifier).text);
+			if(!discardToken(TokenType::equal)){
+				restoreCheckpoint();
+				return nullptr;	
+			}
+			first = false;
+		} else {
+			expectToken(TokenType::equal);
+		}
+		ExprNode *val = handleExpression({ TokenType::comma, TokenType::parenEnd });	
+		returned->as<KeywordCallArgsList>().values.push_back(val);
+	}
+	commitCheckpoint();
+	return returned;
+}
